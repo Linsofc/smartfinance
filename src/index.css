@@ -1,0 +1,196 @@
+@import "tailwindcss";
+
+/* ===== DESIGN TOKENS (DESIGN.md) ===== */
+@theme {
+  --color-canvas: #090909;
+  --color-surface-1: #141414;
+  --color-surface-2: #1c1c1c;
+  --color-hairline: #262626;
+  --color-hairline-soft: #1a1a1a;
+  --color-ink: #ffffff;
+  --color-ink-muted: #999999;
+  --color-accent-blue: #0099ff;
+  --color-gradient-magenta: #d44df0;
+  --color-gradient-violet: #6a4cf5;
+  --color-gradient-orange: #ff7a3d;
+  --color-gradient-coral: #ff5577;
+  --color-success: #22c55e;
+  --color-danger: #ff5577;
+  --color-primary: #ffffff;
+  --color-on-primary: #000000;
+
+  --font-family-inter: 'Inter', system-ui, -apple-system, sans-serif;
+
+  --radius-pill: 100px;
+  --radius-xxl: 30px;
+}
+
+/* ===== BASE ===== */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background-color: #090909;
+    color: #ffffff;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  #root { min-height: 100dvh; }
+
+  input, textarea, select {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    background: transparent;
+    border: none;
+    outline: none;
+  }
+  input::placeholder, textarea::placeholder { color: #999999; opacity: 0.6; }
+  button { font-family: inherit; cursor: pointer; border: none; background: transparent; color: inherit; }
+  a { color: #0099ff; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ===== SCROLLBAR ===== */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #090909; }
+  ::-webkit-scrollbar-thumb { background: #262626; border-radius: 9999px; }
+
+  /* ===== CUSTOM DATE INPUT ===== */
+  input[type="date"] { color-scheme: dark; }
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+}
+
+/* ===== APP LAYOUT ===== */
+.app-root {
+  min-height: 100dvh;
+  background: #090909;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.app-main {
+  width: 100%;
+  max-width: 480px;
+  flex: 1;
+  padding-bottom: 5.5rem;
+  position: relative;
+}
+
+/* ===== BOTTOM NAV ===== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  background: rgba(20,20,20,0.85);
+  backdrop-filter: blur(24px);
+  border-top: 1px solid #1a1a1a;
+  z-index: 50;
+}
+
+/* ===== FAB ===== */
+.fab-btn {
+  position: fixed;
+  bottom: 5.5rem;
+  right: calc(50% - 240px + 1rem);
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #6a4cf5, #d44df0);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 25px rgba(106,76,245,0.4);
+  z-index: 40;
+  cursor: pointer;
+  border: none;
+}
+
+@media (max-width: 480px) {
+  .fab-btn {
+    right: 1rem;
+  }
+  .bottom-nav {
+    max-width: 100%;
+  }
+  .app-main {
+    max-width: 100%;
+  }
+}
+
+@media (min-width: 480px) {
+  .app-main {
+    border-left: 1px solid #1a1a1a;
+    border-right: 1px solid #1a1a1a;
+    background: #090909;
+    box-shadow: 0 0 80px rgba(0, 0, 0, 0.6);
+  }
+  .bottom-nav {
+    border-left: 1px solid #1a1a1a;
+    border-right: 1px solid #1a1a1a;
+  }
+}
+
+/* ===== LOADING SPINNER ===== */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.pulse { animation: pulse 2s cubic-bezier(0.4,0,0.6,1) infinite; }
+
+/* ===== MODAL BACKDROP ===== */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 0;
+}
+
+@media (min-width: 480px) {
+  .modal-backdrop {
+    align-items: center;
+  }
+}
+
+.modal-sheet {
+  width: 100%;
+  max-width: 480px;
+  background: #141414;
+  border-radius: 28px 28px 0 0;
+  border: 1px solid #1a1a1a;
+  border-bottom: none;
+  max-height: 90dvh;
+  overflow-y: auto;
+  position: relative;
+}
+
+@media (min-width: 480px) {
+  .modal-sheet {
+    border-radius: 28px;
+    border-bottom: 1px solid #1a1a1a;
+    max-height: 85dvh;
+  }
+}
