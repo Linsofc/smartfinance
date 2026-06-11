@@ -46,7 +46,12 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 SmartFinance API running on http://localhost:${PORT}`);
-});
+// Start server for local development
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`🚀 SmartFinance API running on http://localhost:${PORT}`);
+  });
+}
+
+// Export app for Vercel Serverless Functions
+export default app;
