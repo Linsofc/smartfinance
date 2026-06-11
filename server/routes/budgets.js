@@ -1,11 +1,11 @@
 import express from 'express';
 import Budget from '../models/Budget.js';
-import { protect } from '../middleware/auth.js';
+import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
 // Apply auth middleware to all budget routes
-router.use(protect);
+router.use(auth);
 
 // @desc    Get all budgets for logged in user
 // @route   GET /api/budgets
