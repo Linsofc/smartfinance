@@ -59,7 +59,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
       {/* Month Selector */}
       <MonthSelector
         month={month}
@@ -72,27 +72,37 @@ export default function DashboardPage() {
       <SummaryCard income={summary.income} expense={summary.expense} />
 
       {/* Transactions List */}
-      <div className="mt-5 flex-1">
+      <div style={{ marginTop: '16px', flex: 1 }}>
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-2 border-ink-muted border-t-accent-blue rounded-full animate-spin" />
-              <p className="text-ink-muted text-xs">Memuat transaksi...</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 0' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+              <div className="loading-spinner" />
+              <p style={{ color: '#999999', fontSize: '12px' }}>Memuat transaksi...</p>
             </div>
           </div>
         ) : groupedTransactions.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center py-20 px-4"
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 16px' }}
           >
-            <div className="w-20 h-20 rounded-[24px] bg-surface-1 flex items-center justify-center mb-4 text-3xl">
+            <div style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '24px',
+              backgroundColor: '#141414',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '16px',
+              fontSize: '30px'
+            }}>
               📭
             </div>
-            <p className="text-ink-muted text-sm text-center">
+            <p style={{ color: '#999999', fontSize: '14px', textAlign: 'center' }}>
               Belum ada transaksi bulan ini
             </p>
-            <p className="text-ink-muted/60 text-xs text-center mt-1">
+            <p style={{ color: 'rgba(153,153,153,0.6)', fontSize: '12px', textAlign: 'center', marginTop: '4px' }}>
               Tap tombol + untuk menambah transaksi pertama
             </p>
           </motion.div>
@@ -103,7 +113,7 @@ export default function DashboardPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.2 }}
             >
               {groupedTransactions.map((group, i) => (
                 <TransactionGroup

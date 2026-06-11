@@ -66,6 +66,15 @@
   input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 }
 
+/* ===== NO SCROLLBAR UTILITY ===== */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* ===== APP LAYOUT ===== */
 .app-root {
   min-height: 100dvh;
@@ -83,6 +92,15 @@
   position: relative;
 }
 
+/* ===== PAGE CONTAINER ===== */
+.page-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 20px 96px;
+  overflow-y: auto;
+}
+
 /* ===== BOTTOM NAV ===== */
 .bottom-nav {
   position: fixed;
@@ -91,10 +109,55 @@
   transform: translateX(-50%);
   width: 100%;
   max-width: 480px;
-  background: rgba(20,20,20,0.85);
+  background: rgba(20,20,20,0.92);
   backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border-top: 1px solid #1a1a1a;
   z-index: 50;
+  padding: 0;
+}
+
+.bottom-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  width: 100%;
+}
+
+.nav-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 0;
+  flex: 1;
+  min-width: 0;
+  text-decoration: none !important;
+}
+
+.nav-indicator {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 2px;
+  border-radius: 9999px;
+  background-color: #0099ff;
+}
+
+.nav-label {
+  font-size: 10px;
+  font-weight: 500;
+  transition: color 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  text-align: center;
 }
 
 /* ===== FAB ===== */
@@ -149,6 +212,15 @@
   animation: spin 1s linear infinite;
 }
 
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 2px solid #999999;
+  border-top-color: #0099ff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
@@ -193,4 +265,23 @@
     border-bottom: 1px solid #1a1a1a;
     max-height: 85dvh;
   }
+}
+
+/* ===== INITIAL SPLASH / LOADING ===== */
+.splash-screen {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #090909;
+}
+.splash-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #6a4cf5, #d44df0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pulse 1.5s cubic-bezier(0.4,0,0.6,1) infinite;
 }

@@ -9,9 +9,15 @@ export function AuthProvider({ children }) {
     return saved ? JSON.parse(saved) : null;
   });
   const [token, setToken] = useState(() => localStorage.getItem('sf_token'));
-  const [loading, setLoading] = useState(true);
+  // If we have cached user/token, skip initial loading state for instant render
+  const [loading, setLoading] = useState(() => {
+    const hasToken = localStorage.getItem('sf_token');
+    const hasUser = localStorage.getItem('sf_user');
+    // Only show loading if there's a token but no cached user
+    return !!(hasToken && !hasUser);
+  });
 
-  // Verify token on mount
+  // Verify token in background (non-blocking)
   useEffect(() => {
     const verifyToken = async () => {
       if (token) {

@@ -15,7 +15,7 @@ export default function BottomNav() {
 
   return (
     <nav className="bottom-nav">
-      <div className="flex items-center justify-around px-2 py-1">
+      <div className="bottom-nav-inner">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;
@@ -24,25 +24,22 @@ export default function BottomNav() {
             <NavLink
               key={item.path}
               to={item.path}
-              className="relative flex flex-col items-center gap-0.5 py-2 px-4 group no-underline"
+              className="nav-item"
             >
               {isActive && (
                 <motion.div
                   layoutId="nav-indicator"
-                  className="absolute -top-px left-1/2 w-5 h-[2px] rounded-full bg-accent-blue -translate-x-1/2"
+                  className="nav-indicator"
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
               )}
               <Icon
                 size={22}
-                className={`transition-colors duration-200 ${
-                  isActive ? 'text-accent-blue' : 'text-ink-muted group-hover:text-ink'
-                }`}
+                style={{ color: isActive ? '#0099ff' : '#999999', transition: 'color 0.2s' }}
               />
               <span
-                className={`text-[11px] font-medium transition-colors duration-200 ${
-                  isActive ? 'text-accent-blue' : 'text-ink-muted group-hover:text-ink'
-                }`}
+                className="nav-label"
+                style={{ color: isActive ? '#0099ff' : '#999999' }}
               >
                 {item.label}
               </span>
