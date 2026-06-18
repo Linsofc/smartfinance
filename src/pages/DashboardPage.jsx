@@ -12,7 +12,8 @@ export default function DashboardPage() {
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
   const [modalOpen, setModalOpen] = useState(false);
-  const { transactions, summary, loading, fetchTransactions, addTransaction } = useTransactions();
+  const [editingTransaction, setEditingTransaction] = useState(null);
+  const { transactions, summary, loading, fetchTransactions, addTransaction, updateTransaction, deleteTransaction } = useTransactions();
 
   useEffect(() => {
     fetchTransactions(month, year);
@@ -53,9 +54,26 @@ export default function DashboardPage() {
     }
   };
 
-  const handleAddTransaction = async (data) => {
-    await addTransaction(data);
+  const handleTransactionClick = (transaction) => {
+    setEditingTransaction(transaction);
+    setModalOpen(true);
+  };
+
+  const handleSaveTransaction = async (data) => {
+    if (editingTransaction) {
+      await updateTransaction(editingTransaction._id, data);
+    } else {
+      await addTransaction(data);
+    }
     fetchTransactions(month, year);
+    setEditingTransaction(null);
+  };
+
+  const handleDeleteTransaction = async (id) => {
+    await deleteTransaction(id);
+    fetchTransactions(month, year);
+    setModalOpen(false);
+    setEditingTransaction(null);
   };
 
   return (
@@ -121,6 +139,7 @@ export default function DashboardPage() {
                   date={group.date}
                   transactions={group.transactions}
                   index={i}
+                  onTransactionClick={handleTransactionClick}
                 />
               ))}
             </motion.div>
@@ -138,11 +157,16 @@ export default function DashboardPage() {
         <Plus size={26} strokeWidth={2.5} />
       </motion.button>
 
-      {/* Add Transaction Modal */}
+      {/* Add/Edit Transaction Modal */}
       <AddTransactionModal
         isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSubmit={handleAddTransaction}
+        onClose={() => {
+          setModalOpen(false);
+          setEditingTransaction(null);
+        }}
+        onSubmit={handleSaveTransaction}
+        onDelete={handleDeleteTransaction}
+        transaction={editingTransaction}
       />
     </div>
   );

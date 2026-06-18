@@ -33,6 +33,11 @@ const transactionSchema = new mongoose.Schema({
     type: String,
     trim: true,
     default: ''
+  },
+  walletId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Wallet',
+    required: false
   }
 }, {
   timestamps: true

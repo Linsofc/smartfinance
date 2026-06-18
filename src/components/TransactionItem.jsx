@@ -53,17 +53,15 @@ function formatRupiah(amount) {
   }).format(amount);
 }
 
-export default function TransactionItem({ transaction, index = 0 }) {
+export default function TransactionItem({ transaction, index = 0, onClick }) {
   const { type, category, amount, note } = transaction;
   const icon = CATEGORY_ICONS[category] || (type === 'INCOME' ? '💰' : '📦');
   const color = CATEGORY_COLORS[category] || (type === 'INCOME' ? '#22c55e' : '#ff5577');
   const isExpense = type === 'EXPENSE';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.05, duration: 0.3 }}
+    <div
+      onClick={onClick}
       className="flex items-center gap-3 py-3.5 px-4 hover:bg-surface-2/60 transition-colors cursor-pointer group"
     >
       {/* Icon */}
@@ -76,7 +74,21 @@ export default function TransactionItem({ transaction, index = 0 }) {
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-ink truncate">{category}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-medium text-ink truncate">{category}</p>
+          {transaction.walletId && typeof transaction.walletId === 'object' && transaction.walletId.name && (
+            <span 
+              className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border"
+              style={{ 
+                color: transaction.walletId.color || '#999999',
+                backgroundColor: `${transaction.walletId.color || '#999999'}15`,
+                borderColor: `${transaction.walletId.color || '#999999'}30`
+              }}
+            >
+              {transaction.walletId.name}
+            </span>
+          )}
+        </div>
         {note && (
           <p className="text-xs text-ink-muted truncate mt-0.5">{note}</p>
         )}
@@ -90,7 +102,7 @@ export default function TransactionItem({ transaction, index = 0 }) {
       >
         {isExpense ? '-' : ''}{formatRupiah(amount)}
       </span>
-    </motion.div>
+    </div>
   );
 }
 

@@ -22,6 +22,19 @@ const walletSchema = new mongoose.Schema({
   color: {
     type: String,
     default: '#6a4cf5'
+  },
+  logo: {
+    type: String,
+    default: ''
+  },
+  type: {
+    type: String,
+    required: [true, 'Tipe dompet harus diisi'],
+    enum: {
+      values: ['Tunai', 'E-Wallet', 'Tabungan', 'Investasi', 'Kartu Kredit', 'Pinjaman', 'Lainnya'],
+      message: 'Tipe dompet tidak valid'
+    },
+    default: 'Tunai'
   }
 }, {
   timestamps: true

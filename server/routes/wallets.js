@@ -22,14 +22,16 @@ router.get('/', async (req, res) => {
 // POST /api/wallets
 router.post('/', async (req, res) => {
   try {
-    const { name, balance, icon, color } = req.body;
+    const { name, balance, icon, color, type, logo } = req.body;
 
     const wallet = new Wallet({
       userId: req.userId,
       name,
       balance: balance || 0,
       icon,
-      color
+      color,
+      type: type || 'Tunai',
+      logo: logo || ''
     });
 
     await wallet.save();

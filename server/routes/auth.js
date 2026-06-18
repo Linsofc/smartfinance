@@ -2,6 +2,10 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import auth from '../middleware/auth.js';
+import Transaction from '../models/Transaction.js';
+import Wallet from '../models/Wallet.js';
+import Transfer from '../models/Transfer.js';
+import Budget from '../models/Budget.js';
 
 const router = express.Router();
 
@@ -82,6 +86,24 @@ router.get('/me', auth, async (req, res) => {
     res.json({ user: req.user.toJSON() });
   } catch (error) {
     res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// POST /api/auth/reset
+router.post('/reset', auth, async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    // Delete all user data
+    await Transaction.deleteMany({ userId });
+    await Wallet.deleteMany({ userId });
+    await Transfer.deleteMany({ userId });
+    await Budget.deleteMany({ userId });
+
+    res.json({ message: 'Semua data transaksi, dompet, transfer, dan anggaran Anda telah berhasil dikosongkan!' });
+  } catch (error) {
+    console.error('Error resetting user data:', error);
+    res.status(500).json({ message: 'Server error. Gagal mengosongkan data.' });
   }
 });
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Settings } from 'lucide-react';
-import api from '../api/axios';
+import { useDataCache } from '../context/DataCacheContext';
 
 export default function BudgetPage() {
   const navigate = useNavigate();
@@ -10,6 +10,7 @@ export default function BudgetPage() {
   const [budgets, setBudgets] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const cache = useDataCache();
 
   // Formatting helpers
   const formatCurrency = (amount) => {
@@ -29,21 +30,29 @@ export default function BudgetPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
+      // Check if we already have cached data — if so, don't show loading
+      const budgetCached = cache.getCacheEntry('budgets');
+      const month = currentDate.getMonth() + 1;
+      const year = currentDate.getFullYear();
+      const txKey = `transactions:${month}:${year}`;
+      const txCached = cache.getCacheEntry(txKey);
+
+      if (!budgetCached && !txCached) {
+        setLoading(true);
+      }
+
       try {
-        // Fetch budgets and transactions in parallel
-        const [budgetsRes, txRes] = await Promise.all([
-          api.get('/budgets'),
-          api.get('/transactions')
+        // Fetch budgets and transactions via cache
+        const [userBudgets, txData] = await Promise.all([
+          cache.fetchBudgets(),
+          cache.fetchTransactions(month, year)
         ]);
-        
-        const userBudgets = budgetsRes.data || [];
         
         // Filter to get only expenses for the current month
         const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
         const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
         
-        const currentMonthExpenses = txRes.data.transactions.filter(tx => {
+        const currentMonthExpenses = txData.transactions.filter(tx => {
           const txDate = new Date(tx.date);
           return tx.type === 'EXPENSE' && 
                  txDate >= startOfMonth && 
@@ -60,7 +69,7 @@ export default function BudgetPage() {
     };
 
     fetchData();
-  }, [currentDate]);
+  }, [currentDate, cache]);
 
   // Calculations
   const calculateCategorySpent = (categoryName) => {

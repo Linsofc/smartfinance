@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ArrowLeft, Plus, X } from 'lucide-react';
-import api from '../api/axios';
+import { useDataCache } from '../context/DataCacheContext';
 
 const INCOME_CATEGORIES = [
   { name: 'Gaji', icon: '💼', color: '#ff7a3d' },
@@ -35,7 +35,7 @@ const EMOJI_DICTIONARY = {
   'Aktivitas': ['⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🪀','🏓','🏸','🏒','🏑','🥍','🏏','🪃','🥅','⛳','🪁','🏹','🎣','🤿','🥊','🥋','🎽','🛹','🛼','🛷','⛸','🥌','🎿','⛷','🏂','🪂','🏋️','🤼','🤸','⛹️','🤺','🤾','🏌️','🏇','🧘','🏄','🏊','🤽','🚣','🧗','🚵','🚴','🏆','🥇','🥈','🥉','🏅','🎖','🏵','🎗','🎫','🎟','🎪','🤹','🎭','🩰','🎨','🎬','🎤','🎧','🎼','🎹','🥁','🎷','🎺','🎸','🪕','🎻','🎲','♟','🎯','🎳','🎮','🎰','🧩']
 };
 
-export default function AddTransactionModal({ isOpen, onClose, onSubmit }) {
+export default function AddTransactionModal({ isOpen, onClose, onSubmit, onDelete, transaction }) {
   const [type, setType] = useState('INCOME'); // Defaulting to INCOME to match the first mockup screen
   const [category, setCategory] = useState('');
   const [amount, setAmount] = useState('');
@@ -69,15 +69,22 @@ export default function AddTransactionModal({ isOpen, onClose, onSubmit }) {
   }, []);
 
   // Fetch wallets on modal open
+  const cache = useDataCache();
   useEffect(() => {
     if (isOpen) {
       const fetchWallets = async () => {
         try {
-          const res = await api.get('/wallets');
-          setWallets(res.data.wallets);
-          if (res.data.wallets.length > 0) {
+          const data = await cache.fetchWallets();
+          setWallets(data.wallets);
+          if (transaction) {
+            const transWalletId = typeof transaction.walletId === 'object' ? transaction.walletId._id : transaction.walletId;
+            const matchedWallet = data.wallets.find(w => w._id === transWalletId);
+            if (matchedWallet) {
+              setSelectedWallet(matchedWallet);
+            }
+          } else if (data.wallets.length > 0) {
             // Default to Dompet Utama if present, else first wallet
-            const defaultWallet = res.data.wallets.find(w => w.name === 'Dompet Utama') || res.data.wallets[0];
+            const defaultWallet = data.wallets.find(w => w.name === 'Dompet Utama') || data.wallets[0];
             setSelectedWallet(defaultWallet);
           }
         } catch (err) {
@@ -86,7 +93,28 @@ export default function AddTransactionModal({ isOpen, onClose, onSubmit }) {
       };
       fetchWallets();
     }
-  }, [isOpen]);
+  }, [isOpen, transaction, cache]);
+
+  // Handle setting transaction edit state values
+  useEffect(() => {
+    if (isOpen) {
+      /* eslint-disable react-hooks/set-state-in-effect */
+      if (transaction) {
+        setType(transaction.type || 'INCOME');
+        setCategory(transaction.category || '');
+        setAmount(String(transaction.amount || ''));
+        setNote(transaction.note || '');
+        setDate(transaction.date ? new Date(transaction.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+      } else {
+        setType('INCOME');
+        setCategory('');
+        setAmount('');
+        setNote('');
+        setDate(new Date().toISOString().split('T')[0]);
+      }
+      /* eslint-enable react-hooks/set-state-in-effect */
+    }
+  }, [isOpen, transaction]);
 
   const allCategories = type === 'INCOME' 
     ? [...INCOME_CATEGORIES, ...customIncomeCategories] 
@@ -137,23 +165,14 @@ export default function AddTransactionModal({ isOpen, onClose, onSubmit }) {
     
     setLoading(true);
     try {
-      // 1. Submit transaction
+      // 1. Submit transaction with walletId
       await onSubmit({ 
         type, 
         category, 
         amount: Number(amount), 
         note, 
-        date: new Date(date).toISOString() 
-      });
-
-      // 2. Synchronize selected wallet balance
-      const balanceChange = type === 'INCOME' ? Number(amount) : -Number(amount);
-      const newBalance = selectedWallet.balance + balanceChange;
-      await api.put(`/wallets/${selectedWallet._id}`, {
-        name: selectedWallet.name,
-        balance: newBalance,
-        icon: selectedWallet.icon,
-        color: selectedWallet.color
+        date: new Date(date).toISOString(),
+        walletId: selectedWallet._id
       });
 
       // Reset form fields
@@ -226,14 +245,14 @@ export default function AddTransactionModal({ isOpen, onClose, onSubmit }) {
               >
                 <ArrowLeft size={22} />
               </button>
-              <h2 className="text-base font-bold tracking-tight text-white">Tambah Transaksi</h2>
+              <h2 className="text-base font-bold tracking-tight text-white">{transaction ? 'Ubah Transaksi' : 'Tambah Transaksi'}</h2>
               <button
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading || !amount || Number(amount) <= 0 || !category || !selectedWallet}
                 className="text-sm font-semibold text-white hover:opacity-85 disabled:opacity-30 transition-opacity px-2"
               >
-                Simpan
+                {transaction ? 'Ubah' : 'Simpan'}
               </button>
             </div>
 
@@ -407,11 +426,22 @@ export default function AddTransactionModal({ isOpen, onClose, onSubmit }) {
                 />
               </div>
 
-              {/* Error Alert Box */}
+              {/* Error Message */}
               {error && (
-                <div className="text-danger text-xs font-semibold bg-danger/10 rounded-xl px-4 py-3 border border-danger/25">
+                <div className="text-danger text-xs text-center font-medium bg-danger/10 py-3 px-4 rounded-xl border border-danger/20">
                   {error}
                 </div>
+              )}
+
+              {transaction && (
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  type="button"
+                  onClick={() => onDelete(transaction._id)}
+                  className="w-full py-3.5 bg-danger/15 border border-danger/30 hover:bg-danger/20 text-danger text-sm font-semibold rounded-2xl transition-colors shrink-0"
+                >
+                  Hapus Transaksi
+                </motion.button>
               )}
 
               {/* Bottom Action Button (Now properly inside scrollable area) */}
@@ -428,7 +458,7 @@ export default function AddTransactionModal({ isOpen, onClose, onSubmit }) {
                     cursor: (loading || !amount || Number(amount) <= 0 || !category || !selectedWallet) ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  {loading ? 'Menyimpan...' : 'Simpan'}
+                  {loading ? 'Menyimpan...' : (transaction ? 'Ubah Transaksi' : 'Simpan')}
                 </motion.button>
               </div>
             </div>

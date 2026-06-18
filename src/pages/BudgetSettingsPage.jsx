@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import api from '../api/axios';
+import { useDataCache } from '../context/DataCacheContext';
 
 const EXPENSE_CATEGORIES = [
   { name: 'Makanan', icon: '🍛', color: '#3b2323' },
@@ -31,6 +31,7 @@ export default function BudgetSettingsPage() {
   const [icon, setIcon] = useState('');
   
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const cache = useDataCache();
 
   const formatCurrency = (amount) => {
     return 'Rp' + amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -39,8 +40,8 @@ export default function BudgetSettingsPage() {
   const fetchBudgets = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/budgets');
-      setBudgets(res.data);
+      const data = await cache.fetchBudgets({ force: true });
+      setBudgets(data);
     } catch (error) {
       console.error('Failed to fetch budgets:', error);
     } finally {
@@ -77,7 +78,7 @@ export default function BudgetSettingsPage() {
     
     setIsSubmitting(true);
     try {
-      await api.post('/budgets', {
+      await cache.createBudget({
         category: category.trim(),
         amount: Number(amount),
         icon: icon || '📁'
@@ -96,7 +97,7 @@ export default function BudgetSettingsPage() {
     if (!window.confirm('Hapus anggaran ini?')) return;
     
     try {
-      await api.delete(`/budgets/${id}`);
+      await cache.deleteBudget(id);
       fetchBudgets();
     } catch (error) {
       console.error('Failed to delete budget:', error);

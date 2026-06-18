@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
       filter.date = { $gte: startDate, $lte: endDate };
     }
 
-    const transactions = await Transaction.find(filter).sort({ date: -1 });
+    const transactions = await Transaction.find(filter).populate('walletId').sort({ date: -1 });
     
     // Calculate totals
     const income = transactions
@@ -118,7 +118,7 @@ router.get('/analytics', async (req, res) => {
 // POST /api/transactions
 router.post('/', async (req, res) => {
   try {
-    const { date, type, category, amount, note } = req.body;
+    const { date, type, category, amount, note, walletId } = req.body;
 
     const transaction = new Transaction({
       userId: req.userId,
@@ -126,10 +126,24 @@ router.post('/', async (req, res) => {
       type,
       category,
       amount,
-      note
+      note,
+      walletId
     });
 
     await transaction.save();
+
+    // Adjust wallet balance if walletId is provided
+    if (walletId) {
+      const wallet = await Wallet.findOne({ _id: walletId, userId: req.userId });
+      if (wallet) {
+        const balanceChange = type === 'INCOME' ? Number(amount) : -Number(amount);
+        wallet.balance += balanceChange;
+        await wallet.save();
+      }
+    }
+
+    await transaction.populate('walletId');
+
     res.status(201).json({ message: 'Transaksi berhasil ditambahkan!', transaction });
   } catch (error) {
     if (error.name === 'ValidationError') {
@@ -143,17 +157,40 @@ router.post('/', async (req, res) => {
 // PUT /api/transactions/:id
 router.put('/:id', async (req, res) => {
   try {
-    const transaction = await Transaction.findOneAndUpdate(
+    const oldTransaction = await Transaction.findOne({ _id: req.params.id, userId: req.userId });
+    if (!oldTransaction) {
+      return res.status(404).json({ message: 'Transaksi tidak ditemukan.' });
+    }
+
+    const updatedTransaction = await Transaction.findOneAndUpdate(
       { _id: req.params.id, userId: req.userId },
       req.body,
       { new: true, runValidators: true }
     );
 
-    if (!transaction) {
-      return res.status(404).json({ message: 'Transaksi tidak ditemukan.' });
+    // Revert old transaction's wallet balance change
+    if (oldTransaction.walletId) {
+      const oldWallet = await Wallet.findOne({ _id: oldTransaction.walletId, userId: req.userId });
+      if (oldWallet) {
+        const oldBalanceChange = oldTransaction.type === 'INCOME' ? oldTransaction.amount : -oldTransaction.amount;
+        oldWallet.balance -= oldBalanceChange;
+        await oldWallet.save();
+      }
     }
 
-    res.json({ message: 'Transaksi berhasil diupdate!', transaction });
+    // Apply new transaction's wallet balance change
+    if (updatedTransaction.walletId) {
+      const newWallet = await Wallet.findOne({ _id: updatedTransaction.walletId, userId: req.userId });
+      if (newWallet) {
+        const newBalanceChange = updatedTransaction.type === 'INCOME' ? updatedTransaction.amount : -updatedTransaction.amount;
+        newWallet.balance += newBalanceChange;
+        await newWallet.save();
+      }
+    }
+
+    await updatedTransaction.populate('walletId');
+
+    res.json({ message: 'Transaksi berhasil diupdate!', transaction: updatedTransaction });
   } catch (error) {
     res.status(500).json({ message: 'Server error.' });
   }
@@ -162,13 +199,21 @@ router.put('/:id', async (req, res) => {
 // DELETE /api/transactions/:id
 router.delete('/:id', async (req, res) => {
   try {
-    const transaction = await Transaction.findOneAndDelete({
-      _id: req.params.id,
-      userId: req.userId
-    });
-
-    if (!transaction) {
+    const oldTransaction = await Transaction.findOne({ _id: req.params.id, userId: req.userId });
+    if (!oldTransaction) {
       return res.status(404).json({ message: 'Transaksi tidak ditemukan.' });
+    }
+
+    await Transaction.deleteOne({ _id: req.params.id, userId: req.userId });
+
+    // Revert balance change on wallet
+    if (oldTransaction.walletId) {
+      const wallet = await Wallet.findOne({ _id: oldTransaction.walletId, userId: req.userId });
+      if (wallet) {
+        const balanceChange = oldTransaction.type === 'INCOME' ? oldTransaction.amount : -oldTransaction.amount;
+        wallet.balance -= balanceChange;
+        await wallet.save();
+      }
     }
 
     res.json({ message: 'Transaksi berhasil dihapus!' });

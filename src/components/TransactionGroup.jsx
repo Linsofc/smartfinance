@@ -23,7 +23,7 @@ function formatDate(dateStr) {
   return `${dayName}, ${day} ${month} ${year}`;
 }
 
-export default function TransactionGroup({ date, transactions, index = 0 }) {
+export default function TransactionGroup({ date, transactions, index = 0, onTransactionClick }) {
   const income = transactions
     .filter(t => t.type === 'INCOME')
     .reduce((sum, t) => sum + t.amount, 0);
@@ -33,9 +33,9 @@ export default function TransactionGroup({ date, transactions, index = 0 }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1, duration: 0.4 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
       className="mx-4 mb-3 rounded-[20px] bg-surface-1 border border-hairline-soft overflow-hidden"
     >
       {/* Date Header */}
@@ -64,6 +64,7 @@ export default function TransactionGroup({ date, transactions, index = 0 }) {
             key={transaction._id || i}
             transaction={transaction}
             index={i}
+            onClick={() => onTransactionClick(transaction)}
           />
         ))}
       </div>
