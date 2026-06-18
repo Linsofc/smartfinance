@@ -3,21 +3,25 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDataCache } from '../context/DataCacheContext';
+import { useAuth } from '../context/AuthContext';
+import api from '../api/axios';
 
 const EXPENSE_CATEGORIES = [
-  { name: 'Makanan', icon: '🍛', color: '#ff7a3d20' },
-  { name: 'Transportasi', icon: '🚗', color: '#6a4cf520' },
-  { name: 'Belanja', icon: '🛍️', color: '#1890ff20' },
-  { name: 'Hiburan', icon: '🎬', color: '#d44df020' },
-  { name: 'Kesehatan', icon: '🏥', color: '#ea3a3a20' },
-  { name: 'Utilitas', icon: '💡', color: '#f59e0b20' },
-  { name: 'Pendidikan', icon: '🎓', color: '#1e904520' },
-  { name: 'Tabungan', icon: '🏦', color: '#10b98120' },
-  { name: 'Hadiah', icon: '🎁', color: '#ff557720' },
+  { name: 'Makanan', icon: '🍲', color: '#ff7a3d20' },
+  { name: 'Jajanan', icon: '🍿', color: '#d44df020' },
+  { name: 'Belanja', icon: '🛒', color: '#6a4cf520' },
+  { name: 'Transportasi', icon: '🚗', color: '#1890ff20' },
+  { name: 'Pendidikan', icon: '📚', color: '#1e904520' },
+  { name: 'Hiburan', icon: '🎮', color: '#ff557720' },
+  { name: 'Pajak', icon: '📋', color: '#64748b20' },
+  { name: 'Hadiah', icon: '🎁', color: '#d44df020' },
+  { name: 'Tarik Uang', icon: '💳', color: '#ff557720' },
+  { name: 'Lainnya', icon: '📦', color: '#64748b20' }
 ];
 
 export default function BudgetSettingsPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [budgets, setBudgets] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -32,6 +36,54 @@ export default function BudgetSettingsPage() {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const cache = useDataCache();
+
+  // Custom Categories state
+  const [customExpenseCategories, setCustomExpenseCategories] = useState([]);
+
+  // Load custom categories from localStorage + auto-discover from transaction history
+  useEffect(() => {
+    if (!user?._id) return;
+    
+    const loadCategories = async () => {
+      // 1. Load from localStorage
+      const savedExpense = localStorage.getItem(`custom_expense_categories_${user._id}`);
+      let currentExpense = savedExpense ? JSON.parse(savedExpense) : [];
+      setCustomExpenseCategories(currentExpense);
+
+      // 2. Discover custom categories from all transaction records
+      try {
+        const res = await api.get('/transactions');
+        const txs = res.data.transactions || [];
+        
+        let updatedExpense = [...currentExpense];
+        let changed = false;
+
+        txs.forEach(t => {
+          if (!t.category || t.type !== 'EXPENSE') return;
+          
+          const existsInDefault = EXPENSE_CATEGORIES.some(c => c.name === t.category);
+          const existsInCustom = updatedExpense.some(c => c.name === t.category);
+          if (!existsInDefault && !existsInCustom) {
+            updatedExpense.push({
+              name: t.category,
+              icon: '📁',
+              color: '#64748b20'
+            });
+            changed = true;
+          }
+        });
+
+        if (changed) {
+          setCustomExpenseCategories(updatedExpense);
+          localStorage.setItem(`custom_expense_categories_${user._id}`, JSON.stringify(updatedExpense));
+        }
+      } catch (err) {
+        console.error('Error auto-discovering categories in budget:', err);
+      }
+    };
+
+    loadCategories();
+  }, [user, isModalOpen]);
 
   const formatCurrency = (amount) => {
     return 'Rp' + amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -349,7 +401,7 @@ export default function BudgetSettingsPage() {
                 className="grid grid-cols-3 gap-y-6 gap-x-4 pb-8 flex-1"
                 style={{ overflowY: 'auto' }}
               >
-                {EXPENSE_CATEGORIES.map(c => (
+                 {[...EXPENSE_CATEGORIES, ...customExpenseCategories].map(c => (
                   <button
                     key={c.name}
                     onClick={() => {
@@ -361,7 +413,7 @@ export default function BudgetSettingsPage() {
                   >
                     <div 
                       className="w-14 h-14 rounded-full flex items-center justify-center text-2xl group-hover:scale-105 transition-transform"
-                      style={{ backgroundColor: c.color }}
+                      style={{ backgroundColor: c.color.endsWith('20') ? c.color : `${c.color}20` }}
                     >
                       {c.icon}
                     </div>

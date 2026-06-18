@@ -14,10 +14,8 @@ import {
   ArrowRight,
   Calendar,
   AlertCircle,
-  Upload,
   ImageIcon
 } from 'lucide-react';
-import api from '../api/axios';
 import { useDataCache } from '../context/DataCacheContext';
 import WALLET_LOGOS, { WalletLogo, LogoBadge } from '../components/WalletLogos';
 
@@ -371,7 +369,7 @@ export default function WalletPage() {
                           <span className="text-sm font-bold text-ink tabular-nums">
                             {formatRupiah(wallet.balance)}
                           </span>
-                          <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center gap-1.5 shrink-0">
                             <button
                               onClick={() => openEditModal(wallet)}
                               className="w-7 h-7 rounded-lg bg-surface-2 flex items-center justify-center text-ink-muted hover:text-ink transition-colors"
