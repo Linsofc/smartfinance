@@ -68,82 +68,73 @@ export default function AddTransactionModal({ isOpen, onClose, onSubmit, onDelet
   const dateInputRef = useRef(null);
 
   // Custom Categories
-  const [customIncomeCategories, setCustomIncomeCategories] = useState([]);
-  const [customExpenseCategories, setCustomExpenseCategories] = useState([]);
+  const [customCategories, setCustomCategories] = useState([]);
   const [showAddCustomCategory, setShowAddCustomCategory] = useState(false);
   const [newCustomCategoryName, setNewCustomCategoryName] = useState('');
   const [newCustomCategoryIcon, setNewCustomCategoryIcon] = useState('🍲');
   const [showIconPicker, setShowIconPicker] = useState(false);
 
-  // Load custom categories from localStorage + auto-discover from transaction history
+  const cache = useDataCache();
+
+  // Load custom categories from database + auto-discover from transaction history
   useEffect(() => {
     if (!user?._id) return;
     
     const loadCategories = async () => {
-      // 1. Load from localStorage
-      const savedExpense = localStorage.getItem(`custom_expense_categories_${user._id}`);
-      let currentExpense = savedExpense ? JSON.parse(savedExpense) : [];
-      
-      const savedIncome = localStorage.getItem(`custom_income_categories_${user._id}`);
-      let currentIncome = savedIncome ? JSON.parse(savedIncome) : [];
-
-      setCustomExpenseCategories(currentExpense);
-      setCustomIncomeCategories(currentIncome);
-
-      // 2. Discover custom categories from all transaction records
       try {
-        const res = await api.get('/transactions');
-        const txs = res.data.transactions || [];
+        const cats = await cache.fetchCategories();
         
-        let updatedExpense = [...currentExpense];
-        let updatedIncome = [...currentIncome];
-        let changed = false;
-
+        // Discover custom categories from transaction history (cached)
+        let txsData = [];
+        try {
+          txsData = await cache.fetchAllTransactions();
+        } catch (err) {
+          console.error('Error fetching all transactions for auto-discovery:', err);
+        }
+        
+        const txs = txsData.transactions || txsData || [];
+        
+        let discovered = [...cats];
         txs.forEach(t => {
           if (!t.category) return;
           
           if (t.type === 'EXPENSE') {
             const existsInDefault = EXPENSE_CATEGORIES.some(c => c.name === t.category);
-            const existsInCustom = updatedExpense.some(c => c.name === t.category);
+            const existsInCustom = discovered.some(c => c.name === t.category && c.type === 'EXPENSE');
             if (!existsInDefault && !existsInCustom) {
-              updatedExpense.push({
+              discovered.push({
                 name: t.category,
                 icon: '📁',
-                color: '#64748b'
+                color: '#64748b',
+                type: 'EXPENSE'
               });
-              changed = true;
             }
           } else if (t.type === 'INCOME') {
             const existsInDefault = INCOME_CATEGORIES.some(c => c.name === t.category);
-            const existsInCustom = updatedIncome.some(c => c.name === t.category);
+            const existsInCustom = discovered.some(c => c.name === t.category && c.type === 'INCOME');
             if (!existsInDefault && !existsInCustom) {
-              updatedIncome.push({
+              discovered.push({
                 name: t.category,
                 icon: '💰',
-                color: '#64748b'
+                color: '#64748b',
+                type: 'INCOME'
               });
-              changed = true;
             }
           }
         });
 
-        if (changed) {
-          setCustomExpenseCategories(updatedExpense);
-          setCustomIncomeCategories(updatedIncome);
-          localStorage.setItem(`custom_expense_categories_${user._id}`, JSON.stringify(updatedExpense));
-          localStorage.setItem(`custom_income_categories_${user._id}`, JSON.stringify(updatedIncome));
-        }
+        setCustomCategories(discovered);
       } catch (err) {
-        console.error('Error auto-discovering categories:', err);
+        console.error('Error loading custom categories:', err);
       }
     };
 
-    loadCategories();
-  }, [user, isOpen]);
-
+    if (isOpen) {
+      loadCategories();
+    }
+  }, [user, isOpen, cache]);
 
   // Fetch wallets on modal open
-  const cache = useDataCache();
   useEffect(() => {
     if (isOpen) {
       const fetchWallets = async () => {
@@ -191,39 +182,36 @@ export default function AddTransactionModal({ isOpen, onClose, onSubmit, onDelet
   }, [isOpen, transaction]);
 
   const allCategories = type === 'INCOME' 
-    ? [...INCOME_CATEGORIES, ...customIncomeCategories] 
-    : [...EXPENSE_CATEGORIES, ...customExpenseCategories];
+    ? [...INCOME_CATEGORIES, ...customCategories.filter(c => c.type === 'INCOME')] 
+    : [...EXPENSE_CATEGORIES, ...customCategories.filter(c => c.type === 'EXPENSE')];
 
   const handleAmountChange = (e) => {
     const val = e.target.value.replace(/[^0-9]/g, '');
     setAmount(val);
   };
 
-  const handleAddCustomCategory = () => {
+  const handleAddCustomCategory = async () => {
     if (!newCustomCategoryName.trim()) return;
-    const newCat = {
-      name: newCustomCategoryName.trim(),
-      icon: newCustomCategoryIcon,
-      color: '#1890ff'
-    };
-    if (type === 'INCOME') {
-      const updated = [...customIncomeCategories, newCat];
-      setCustomIncomeCategories(updated);
-      if (user?._id) {
-        localStorage.setItem(`custom_income_categories_${user._id}`, JSON.stringify(updated));
-      }
-    } else {
-      const updated = [...customExpenseCategories, newCat];
-      setCustomExpenseCategories(updated);
-      if (user?._id) {
-        localStorage.setItem(`custom_expense_categories_${user._id}`, JSON.stringify(updated));
-      }
+    try {
+      const newCat = {
+        name: newCustomCategoryName.trim(),
+        icon: newCustomCategoryIcon,
+        color: '#1890ff',
+        type
+      };
+      
+      const updatedCats = await cache.addCustomCategory(newCat);
+      setCustomCategories(updatedCats);
+      
+      setCategory(newCat.name);
+      setNewCustomCategoryName('');
+      setShowAddCustomCategory(false);
+      setCategoryDrawerOpen(false);
+      setShowIconPicker(false);
+    } catch (err) {
+      console.error('Error adding custom category:', err);
+      setError(err.response?.data?.message || 'Gagal menambahkan kategori');
     }
-    setCategory(newCat.name);
-    setNewCustomCategoryName('');
-    setShowAddCustomCategory(false);
-    setCategoryDrawerOpen(false);
-    setShowIconPicker(false);
   };
 
   const formatDateIndo = (dateStr) => {
@@ -433,7 +421,7 @@ export default function AddTransactionModal({ isOpen, onClose, onSubmit, onDelet
 
               {/* Fields List Container */}
               <div 
-                className="rounded-[24px] overflow-hidden"
+                className="rounded-3xl overflow-hidden"
                 style={{
                   backgroundColor: '#ffffff',
                   border: '1px solid #e2e8f0'
@@ -584,7 +572,7 @@ export default function AddTransactionModal({ isOpen, onClose, onSubmit, onDelet
                   }}
                 >
                   <motion.div
-                    className="w-full rounded-t-[24px] flex flex-col overflow-hidden"
+                    className="w-full rounded-t-3xl flex flex-col overflow-hidden"
                     initial={{ y: '100%' }}
                     animate={{ y: 0 }}
                     exit={{ y: '100%' }}
@@ -787,7 +775,7 @@ export default function AddTransactionModal({ isOpen, onClose, onSubmit, onDelet
                   }}
                 >
                   <motion.div
-                    className="w-full rounded-t-[24px] flex flex-col"
+                    className="w-full rounded-t-3xl flex flex-col"
                     initial={{ y: '100%' }}
                     animate={{ y: 0 }}
                     exit={{ y: '100%' }}

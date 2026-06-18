@@ -97,7 +97,7 @@ export default function BudgetPage() {
           >
             <ChevronLeft size={16} />
           </button>
-          <span className="text-slate-700 font-bold text-xs px-1.5 min-w-[80px] text-center">
+          <span className="text-slate-700 font-bold text-xs px-1.5 min-w-20 text-center">
             {getMonthName(currentDate)}
           </span>
           <button 
@@ -127,7 +127,7 @@ export default function BudgetPage() {
           animate={{ opacity: 1, y: 0 }}
         >
           {/* Main Budget Card */}
-          <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-[24px] p-6 text-white shadow-lg shadow-blue-500/10">
+          <div className="bg-linear-to-br from-blue-600 to-indigo-600 rounded-3xl p-5 sm:p-6 text-white shadow-lg shadow-blue-500/10">
             <div className="flex justify-between items-end mb-5">
               <div>
                 <p className="text-blue-100 text-xs font-semibold uppercase tracking-wider mb-1">Total Anggaran</p>
@@ -152,10 +152,10 @@ export default function BudgetPage() {
 
           {/* Budget List */}
           {budgets.length === 0 ? (
-            <div className="text-center py-12 px-6 bg-white rounded-[24px] border border-slate-100 shadow-sm mt-2">
+            <div className="text-center py-12 px-6 bg-white rounded-3xl border border-slate-100 shadow-sm mt-2">
               <div className="text-4xl mb-4">🎯</div>
               <h3 className="text-slate-800 font-bold text-base mb-1.5">Belum Ada Anggaran</h3>
-              <p className="text-slate-500 text-xs leading-relaxed max-w-[280px] mx-auto">
+              <p className="text-slate-500 text-xs leading-relaxed max-w-70 mx-auto">
                 Tekan tombol pengaturan (⚙️) di sudut kanan atas untuk mulai membuat anggaran bulanan Anda.
               </p>
             </div>
@@ -181,7 +181,7 @@ export default function BudgetPage() {
               }
 
               return (
-                <div key={budget._id} className="bg-white rounded-[24px] p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                <div key={budget._id} className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
                   <div className="flex gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-2xl shrink-0">
                       {budget.icon}

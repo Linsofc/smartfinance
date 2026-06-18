@@ -36,8 +36,8 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-canvas flex flex-col items-center justify-center px-6 relative overflow-hidden">
       {/* Background gradient orbs */}
-      <div className="absolute top-[-20%] right-[-20%] w-[500px] h-[500px] rounded-full bg-brand-blue-light/5 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-20%] left-[-20%] w-[400px] h-[400px] rounded-full bg-brand-green-light/5 blur-[120px] pointer-events-none" />
+      <div className="absolute top-[-20%] right-[-20%] w-125 h-125 rounded-full bg-brand-blue-light/5 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-20%] left-[-20%] w-100 h-100 rounded-full bg-brand-green-light/5 blur-[120px] pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -160,7 +160,7 @@ export default function LoginPage() {
                 width="340"
               />
             ) : (
-              <div className="w-full max-w-[340px] p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-3">
+              <div className="w-full max-w-85 p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-3">
                 <AlertTriangle size={18} className="text-amber-500 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-[11px] font-semibold text-amber-500">Google Login Nonaktif</p>

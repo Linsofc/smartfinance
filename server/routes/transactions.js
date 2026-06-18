@@ -4,6 +4,7 @@ import path from 'path';
 import Transaction from '../models/Transaction.js';
 import Wallet from '../models/Wallet.js';
 import auth from '../middleware/auth.js';
+import { getCache, setCache, invalidateCache } from '../utils/cache.js';
 
 const router = express.Router();
 
@@ -14,6 +15,12 @@ router.use(auth);
 router.get('/', async (req, res) => {
   try {
     const { month, year } = req.query;
+    const cacheKey = `transactions:${req.userId}:${month || 'all'}:${year || 'all'}`;
+    const cached = getCache(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
     let filter = { userId: req.userId };
 
     if (month && year) {
@@ -22,7 +29,7 @@ router.get('/', async (req, res) => {
       filter.date = { $gte: startDate, $lte: endDate };
     }
 
-    const transactions = await Transaction.find(filter).populate('walletId').sort({ date: -1 });
+    const transactions = await Transaction.find(filter).populate('walletId', 'name color').sort({ date: -1 });
     
     // Calculate totals
     const income = transactions
@@ -32,11 +39,15 @@ router.get('/', async (req, res) => {
       .filter(t => t.type === 'EXPENSE')
       .reduce((sum, t) => sum + t.amount, 0);
 
-    res.json({
+    const responseData = {
       transactions,
       summary: { income, expense, balance: income - expense }
-    });
+    };
+
+    setCache(cacheKey, responseData);
+    res.json(responseData);
   } catch (error) {
+    console.error('Fetch transactions error:', error);
     res.status(500).json({ message: 'Server error.' });
   }
 });
@@ -46,6 +57,11 @@ router.get('/analytics', async (req, res) => {
   try {
     const { year } = req.query;
     const currentYear = year || new Date().getFullYear();
+    const cacheKey = `analytics:${req.userId}:${currentYear}`;
+    const cached = getCache(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
     
     const startDate = new Date(currentYear, 0, 1);
     const endDate = new Date(currentYear, 11, 31, 23, 59, 59, 999);
@@ -100,7 +116,7 @@ router.get('/analytics', async (req, res) => {
       .filter(t => t.type === 'EXPENSE')
       .reduce((sum, t) => sum + t.amount, 0);
 
-    res.json({
+    const responseData = {
       categories,
       monthly,
       summary: {
@@ -109,8 +125,12 @@ router.get('/analytics', async (req, res) => {
         balance: totalIncome - totalExpense,
         transactionCount: transactions.length
       }
-    });
+    };
+
+    setCache(cacheKey, responseData);
+    res.json(responseData);
   } catch (error) {
+    console.error('Fetch analytics error:', error);
     res.status(500).json({ message: 'Server error.' });
   }
 });
@@ -142,7 +162,12 @@ router.post('/', async (req, res) => {
       }
     }
 
-    await transaction.populate('walletId');
+    await transaction.populate('walletId', 'name color');
+
+    // Invalidate caches
+    invalidateCache(`transactions:${req.userId}`);
+    invalidateCache(`analytics:${req.userId}`);
+    invalidateCache(`wallets:${req.userId}`);
 
     res.status(201).json({ message: 'Transaksi berhasil ditambahkan!', transaction });
   } catch (error) {
@@ -150,6 +175,7 @@ router.post('/', async (req, res) => {
       const messages = Object.values(error.errors).map(e => e.message);
       return res.status(400).json({ message: messages.join(', ') });
     }
+    console.error('Add transaction error:', error);
     res.status(500).json({ message: 'Server error.' });
   }
 });
@@ -188,10 +214,16 @@ router.put('/:id', async (req, res) => {
       }
     }
 
-    await updatedTransaction.populate('walletId');
+    await updatedTransaction.populate('walletId', 'name color');
+
+    // Invalidate caches
+    invalidateCache(`transactions:${req.userId}`);
+    invalidateCache(`analytics:${req.userId}`);
+    invalidateCache(`wallets:${req.userId}`);
 
     res.json({ message: 'Transaksi berhasil diupdate!', transaction: updatedTransaction });
   } catch (error) {
+    console.error('Update transaction error:', error);
     res.status(500).json({ message: 'Server error.' });
   }
 });
@@ -216,8 +248,14 @@ router.delete('/:id', async (req, res) => {
       }
     }
 
+    // Invalidate caches
+    invalidateCache(`transactions:${req.userId}`);
+    invalidateCache(`analytics:${req.userId}`);
+    invalidateCache(`wallets:${req.userId}`);
+
     res.json({ message: 'Transaksi berhasil dihapus!' });
   } catch (error) {
+    console.error('Delete transaction error:', error);
     res.status(500).json({ message: 'Server error.' });
   }
 });
@@ -287,6 +325,11 @@ router.post('/import-csv', async (req, res) => {
       });
       await wallet.save();
     }
+
+    // Invalidate caches
+    invalidateCache(`transactions:${req.userId}`);
+    invalidateCache(`analytics:${req.userId}`);
+    invalidateCache(`wallets:${req.userId}`);
 
     res.json({ message: `Berhasil mengimpor ${transactionsToInsert.length} transaksi dari CSV!`, count: transactionsToInsert.length });
   } catch (error) {

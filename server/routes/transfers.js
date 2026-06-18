@@ -2,6 +2,7 @@ import express from 'express';
 import Transfer from '../models/Transfer.js';
 import Wallet from '../models/Wallet.js';
 import auth from '../middleware/auth.js';
+import { getCache, setCache, invalidateCache } from '../utils/cache.js';
 
 const router = express.Router();
 
@@ -11,11 +12,18 @@ router.use(auth);
 // GET /api/transfers
 router.get('/', async (req, res) => {
   try {
+    const cacheKey = `transfers:${req.userId}`;
+    const cached = getCache(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
     const transfers = await Transfer.find({ userId: req.userId })
       .populate('fromWalletId', 'name color icon type')
       .populate('toWalletId', 'name color icon type')
       .sort({ date: -1, createdAt: -1 });
 
+    setCache(cacheKey, transfers);
     res.json(transfers);
   } catch (error) {
     console.error('Error fetching transfers:', error);
@@ -67,6 +75,8 @@ router.post('/', async (req, res) => {
     });
 
     await transfer.save();
+    invalidateCache(`transfers:${req.userId}`);
+    invalidateCache(`wallets:${req.userId}`);
 
     res.status(201).json({ message: 'Transfer berhasil dilakukan!', transfer });
   } catch (error) {

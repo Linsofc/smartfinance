@@ -24,6 +24,17 @@ const userSchema = new mongoose.Schema({
   profilePicture: {
     type: String, // Store Base64 string
     default: ''
+  },
+  customCategories: {
+    type: [
+      {
+        name: String,
+        icon: String,
+        color: String,
+        type: { type: String, enum: ['INCOME', 'EXPENSE'] }
+      }
+    ],
+    default: []
   }
 }, {
   timestamps: true

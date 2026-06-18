@@ -19,6 +19,9 @@ export function DataCacheProvider({ children }) {
   // Cache store: { [cacheKey]: { data, timestamp, promise? } }
   const cacheRef = useRef(new Map());
 
+  // Store active promises to deduplicate concurrent requests: { [cacheKey]: Promise }
+  const activeRequestsRef = useRef(new Map());
+
   // We use a version counter to force re-renders when cache is updated
   const [cacheVersion, setCacheVersion] = useState(0);
   const bumpVersion = () => setCacheVersion(v => v + 1);
@@ -66,21 +69,33 @@ export function DataCacheProvider({ children }) {
       return cached.data;
     }
 
-    // Fetch from network
-    try {
-      const res = await api.get('/transactions', { params: { month, year } });
-      setCacheEntry(key, res.data);
-      return res.data;
-    } catch (error) {
-      // If we have stale cache, return it on error
-      if (cached) return cached.data;
-      throw error;
+    // Return active promise if already in flight to deduplicate concurrent requests
+    if (activeRequestsRef.current.has(key)) {
+      return activeRequestsRef.current.get(key);
     }
+
+    const promise = (async () => {
+      try {
+        const res = await api.get('/transactions', { params: { month, year } });
+        setCacheEntry(key, res.data);
+        return res.data;
+      } catch (error) {
+        // If we have stale cache, return it on error
+        if (cached) return cached.data;
+        throw error;
+      } finally {
+        activeRequestsRef.current.delete(key);
+      }
+    })();
+
+    activeRequestsRef.current.set(key, promise);
+    return promise;
   }, [getCacheEntry, isFresh, setCacheEntry]);
 
   const addTransaction = useCallback(async (data) => {
     const res = await api.post('/transactions', data);
     invalidateCache('transactions:');
+    invalidateCache('all_transactions');
     invalidateCache('analytics:');
     invalidateCache('wallets'); // Transactions may affect wallet balance
     return res.data;
@@ -89,6 +104,7 @@ export function DataCacheProvider({ children }) {
   const updateTransaction = useCallback(async (id, data) => {
     const res = await api.put(`/transactions/${id}`, data);
     invalidateCache('transactions:');
+    invalidateCache('all_transactions');
     invalidateCache('analytics:');
     invalidateCache('wallets');
     return res.data;
@@ -97,6 +113,7 @@ export function DataCacheProvider({ children }) {
   const deleteTransaction = useCallback(async (id) => {
     const res = await api.delete(`/transactions/${id}`);
     invalidateCache('transactions:');
+    invalidateCache('all_transactions');
     invalidateCache('analytics:');
     invalidateCache('wallets');
     return res.data;
@@ -111,14 +128,25 @@ export function DataCacheProvider({ children }) {
       return cached.data;
     }
 
-    try {
-      const res = await api.get('/transactions/analytics', { params: { year } });
-      setCacheEntry(key, res.data);
-      return res.data;
-    } catch (error) {
-      if (cached) return cached.data;
-      throw error;
+    if (activeRequestsRef.current.has(key)) {
+      return activeRequestsRef.current.get(key);
     }
+
+    const promise = (async () => {
+      try {
+        const res = await api.get('/transactions/analytics', { params: { year } });
+        setCacheEntry(key, res.data);
+        return res.data;
+      } catch (error) {
+        if (cached) return cached.data;
+        throw error;
+      } finally {
+        activeRequestsRef.current.delete(key);
+      }
+    })();
+
+    activeRequestsRef.current.set(key, promise);
+    return promise;
   }, [getCacheEntry, isFresh, setCacheEntry]);
 
   // ─── Wallets ────────────────────────────────────────
@@ -130,14 +158,25 @@ export function DataCacheProvider({ children }) {
       return cached.data;
     }
 
-    try {
-      const res = await api.get('/wallets');
-      setCacheEntry(key, res.data);
-      return res.data;
-    } catch (error) {
-      if (cached) return cached.data;
-      throw error;
+    if (activeRequestsRef.current.has(key)) {
+      return activeRequestsRef.current.get(key);
     }
+
+    const promise = (async () => {
+      try {
+        const res = await api.get('/wallets');
+        setCacheEntry(key, res.data);
+        return res.data;
+      } catch (error) {
+        if (cached) return cached.data;
+        throw error;
+      } finally {
+        activeRequestsRef.current.delete(key);
+      }
+    })();
+
+    activeRequestsRef.current.set(key, promise);
+    return promise;
   }, [getCacheEntry, isFresh, setCacheEntry]);
 
   const createWallet = useCallback(async (data) => {
@@ -168,14 +207,25 @@ export function DataCacheProvider({ children }) {
       return cached.data;
     }
 
-    try {
-      const res = await api.get('/transfers');
-      setCacheEntry(key, res.data);
-      return res.data;
-    } catch (error) {
-      if (cached) return cached.data;
-      throw error;
+    if (activeRequestsRef.current.has(key)) {
+      return activeRequestsRef.current.get(key);
     }
+
+    const promise = (async () => {
+      try {
+        const res = await api.get('/transfers');
+        setCacheEntry(key, res.data);
+        return res.data;
+      } catch (error) {
+        if (cached) return cached.data;
+        throw error;
+      } finally {
+        activeRequestsRef.current.delete(key);
+      }
+    })();
+
+    activeRequestsRef.current.set(key, promise);
+    return promise;
   }, [getCacheEntry, isFresh, setCacheEntry]);
 
   const createTransfer = useCallback(async (data) => {
@@ -194,14 +244,25 @@ export function DataCacheProvider({ children }) {
       return cached.data;
     }
 
-    try {
-      const res = await api.get('/budgets');
-      setCacheEntry(key, res.data);
-      return res.data;
-    } catch (error) {
-      if (cached) return cached.data;
-      throw error;
+    if (activeRequestsRef.current.has(key)) {
+      return activeRequestsRef.current.get(key);
     }
+
+    const promise = (async () => {
+      try {
+        const res = await api.get('/budgets');
+        setCacheEntry(key, res.data);
+        return res.data;
+      } catch (error) {
+        if (cached) return cached.data;
+        throw error;
+      } finally {
+        activeRequestsRef.current.delete(key);
+      }
+    })();
+
+    activeRequestsRef.current.set(key, promise);
+    return promise;
   }, [getCacheEntry, isFresh, setCacheEntry]);
 
   const createBudget = useCallback(async (data) => {
@@ -216,6 +277,72 @@ export function DataCacheProvider({ children }) {
     return res.data;
   }, [invalidateCache]);
 
+  // ─── Categories ─────────────────────────────────────
+  const fetchCategories = useCallback(async (opts = {}) => {
+    const key = 'categories';
+    const cached = getCacheEntry(key);
+
+    if (cached && isFresh(key) && !opts.force) {
+      return cached.data;
+    }
+
+    if (activeRequestsRef.current.has(key)) {
+      return activeRequestsRef.current.get(key);
+    }
+
+    const promise = (async () => {
+      try {
+        const res = await api.get('/auth/categories');
+        setCacheEntry(key, res.data);
+        return res.data;
+      } catch (error) {
+        if (cached) return cached.data;
+        throw error;
+      } finally {
+        activeRequestsRef.current.delete(key);
+      }
+    })();
+
+    activeRequestsRef.current.set(key, promise);
+    return promise;
+  }, [getCacheEntry, isFresh, setCacheEntry]);
+
+  const addCustomCategory = useCallback(async (categoryData) => {
+    const res = await api.post('/auth/categories', categoryData);
+    invalidateCache('categories');
+    return res.data;
+  }, [invalidateCache]);
+
+  // ─── Fetch All Transactions ─────────────────────────
+  const fetchAllTransactions = useCallback(async (opts = {}) => {
+    const key = 'all_transactions';
+    const cached = getCacheEntry(key);
+
+    if (cached && isFresh(key) && !opts.force) {
+      return cached.data;
+    }
+
+    if (activeRequestsRef.current.has(key)) {
+      return activeRequestsRef.current.get(key);
+    }
+
+    const promise = (async () => {
+      try {
+        const res = await api.get('/transactions');
+        setCacheEntry(key, res.data);
+        return res.data;
+      } catch (error) {
+        if (cached) return cached.data;
+        throw error;
+      } finally {
+        activeRequestsRef.current.delete(key);
+      }
+    })();
+
+    activeRequestsRef.current.set(key, promise);
+    return promise;
+  }, [getCacheEntry, isFresh, setCacheEntry]);
+
   return (
     <DataCacheContext.Provider value={{
       // Version for reactivity
@@ -227,6 +354,7 @@ export function DataCacheProvider({ children }) {
       isFresh,
       // Transactions
       fetchTransactions,
+      fetchAllTransactions,
       addTransaction,
       updateTransaction,
       deleteTransaction,
@@ -244,6 +372,9 @@ export function DataCacheProvider({ children }) {
       fetchBudgets,
       createBudget,
       deleteBudget,
+      // Categories
+      fetchCategories,
+      addCustomCategory,
     }}>
       {children}
     </DataCacheContext.Provider>

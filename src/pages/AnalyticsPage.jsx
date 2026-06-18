@@ -3,7 +3,8 @@ import { motion as motionFramer, AnimatePresence as AnimatePresenceFramer } from
 import { 
   Tag, Wallet, Eye, EyeOff, 
   ArrowUpRight, ArrowDownRight, DollarSign, TrendingUp, 
-  PieChart as PieChartIcon, BarChart3, Clock 
+  PieChart as PieChartIcon, BarChart3, Clock,
+  CreditCard, Smartphone, Banknote, Wallet as WalletIcon
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -11,6 +12,14 @@ import {
 } from 'recharts';
 import { useDataCache } from '../context/DataCacheContext';
 import api from '../api/axios';
+import { WalletLogo } from '../components/WalletLogos';
+
+const WALLET_ICONS = {
+  wallet: WalletIcon,
+  card: CreditCard,
+  phone: Smartphone,
+  cash: Banknote,
+};
 
 const CHART_COLORS = [
   '#ff7a3d', '#6a4cf5', '#d44df0', '#1890ff', '#1e9045',
@@ -103,24 +112,48 @@ export default function AnalyticsPage() {
   const [isCategorySheetOpen, setIsCategorySheetOpen] = useState(false);
   const [isWalletSheetOpen, setIsWalletSheetOpen] = useState(false);
 
-  // Fetch all transactions and wallets on mount
+  // Fetch all transactions and wallets on mount using cache context (Stale-While-Revalidate pattern)
   useEffect(() => {
+    let active = true;
     const loadData = async () => {
+      // 1. Try to load from cache first to avoid flashing spinner / delay
+      const cachedTxs = cache.getCacheEntry('all_transactions');
+      const cachedWallets = cache.getCacheEntry('wallets');
+      
+      const hasCache = cachedTxs && cachedWallets;
+      if (hasCache) {
+        setTransactions(cachedTxs.data.transactions || cachedTxs.data || []);
+        setWallets(cachedWallets.data.wallets || cachedWallets.data || []);
+        setLoading(false); // Render instantly!
+      }
+      
+      // 2. Fetch fresh data in the background (or foreground if cache is empty)
       try {
-        setLoading(true);
-        // GET /transactions returns all transactions without month/year query params
-        const res = await api.get('/transactions');
-        setTransactions(res.data.transactions || []);
+        if (!hasCache) {
+          setLoading(true);
+        }
         
-        const walletData = await cache.fetchWallets();
-        setWallets(walletData?.wallets || walletData || []);
+        const txsPromise = cache.fetchAllTransactions();
+        const walletsPromise = cache.fetchWallets();
+        
+        const [txsData, walletData] = await Promise.all([txsPromise, walletsPromise]);
+        
+        if (active) {
+          setTransactions(txsData.transactions || txsData || []);
+          setWallets(walletData.wallets || walletData || []);
+        }
       } catch (error) {
         console.error('Failed to load transactions for analytics:', error);
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     };
     loadData();
+    return () => {
+      active = false;
+    };
   }, [cache]);
 
   // Handle Period Change event
@@ -375,7 +408,7 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-[#f8fafc] min-h-screen">
+      <div className="flex-1 flex flex-col items-center justify-center bg-surface-2 min-h-screen">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-ink-muted border-t-accent-blue rounded-full animate-spin" />
           <p className="text-ink-muted text-xs font-semibold">Memuat analisis...</p>
@@ -385,7 +418,7 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="flex-1 flex flex-col pt-12 pb-24 px-4 overflow-y-auto no-scrollbar relative bg-[#f8fafc]">
+    <div className="flex-1 flex flex-col pt-12 pb-24 px-4 overflow-y-auto no-scrollbar relative bg-surface-2">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-heading font-extrabold text-ink tracking-tight">
@@ -452,10 +485,10 @@ export default function AnalyticsPage() {
         </AnimatePresenceFramer>
 
         {/* Filter tags buttons row */}
-        <div className="flex items-center gap-2 pt-1 border-t border-hairline-soft mt-1">
+        <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-hairline-soft mt-1">
           <button
             onClick={() => setIsCategorySheetOpen(true)}
-            className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-full border text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1 px-2.5 py-2 sm:px-3.5 sm:py-2.5 rounded-full border text-[11px] sm:text-xs font-semibold transition-all ${
               selectedCategories.length > 0 
                 ? 'border-accent-blue bg-accent-blue/5 text-accent-blue' 
                 : 'border-hairline bg-slate-50 text-ink-muted hover:bg-slate-100'
@@ -467,7 +500,7 @@ export default function AnalyticsPage() {
 
           <button
             onClick={() => setIsWalletSheetOpen(true)}
-            className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-full border text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1 px-2.5 py-2 sm:px-3.5 sm:py-2.5 rounded-full border text-[11px] sm:text-xs font-semibold transition-all ${
               selectedWallets.length > 0 
                 ? 'border-accent-blue bg-accent-blue/5 text-accent-blue' 
                 : 'border-hairline bg-slate-50 text-ink-muted hover:bg-slate-100'
@@ -479,7 +512,7 @@ export default function AnalyticsPage() {
 
           <button
             onClick={() => setIsFiltersCollapsed(!isFiltersCollapsed)}
-            className="ml-auto flex items-center gap-1.5 px-3.5 py-2.5 rounded-full border border-hairline bg-slate-50 text-ink-muted text-xs font-semibold hover:bg-slate-100 transition-all"
+            className="sm:ml-auto flex items-center gap-1 px-2.5 py-2 sm:px-3.5 sm:py-2.5 rounded-full border border-hairline bg-slate-50 text-ink-muted text-[11px] sm:text-xs font-semibold hover:bg-slate-100 transition-all"
           >
             {isFiltersCollapsed ? (
               <>
@@ -523,7 +556,7 @@ export default function AnalyticsPage() {
         {/* MASUK */}
         <div className="bg-white rounded-3xl p-4 border border-hairline flex flex-col justify-between shadow-sm relative overflow-hidden">
           <div>
-            <span className="text-[9px] font-extrabold tracking-wider text-ink-muted uppercase text-success">Masuk</span>
+            <span className="text-[9px] font-extrabold tracking-wider uppercase text-success">Masuk</span>
             <h4 className="text-lg font-black text-success mt-1 tracking-tight truncate">
               {formatRupiahFull(metrics.totalIncome)}
             </h4>
@@ -539,7 +572,7 @@ export default function AnalyticsPage() {
         {/* KELUAR */}
         <div className="bg-white rounded-3xl p-4 border border-hairline flex flex-col justify-between shadow-sm relative overflow-hidden">
           <div>
-            <span className="text-[9px] font-extrabold tracking-wider text-ink-muted uppercase text-danger">Keluar</span>
+            <span className="text-[9px] font-extrabold tracking-wider uppercase text-danger">Keluar</span>
             <h4 className="text-lg font-black text-danger mt-1 tracking-tight truncate">
               {formatRupiahFull(metrics.totalExpense)}
             </h4>
@@ -587,7 +620,7 @@ export default function AnalyticsPage() {
             </div>
           ) : (
             <>
-              <div className="h-48 w-full relative min-h-[192px]">
+              <div className="h-48 w-full relative min-h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -643,7 +676,7 @@ export default function AnalyticsPage() {
             </div>
           ) : (
             <>
-              <div className="h-48 w-full relative min-h-[192px]">
+              <div className="h-48 w-full relative min-h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={trendChartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
@@ -680,7 +713,7 @@ export default function AnalyticsPage() {
                   <span className="text-[10px] font-bold text-ink-muted">Pemasukan</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-[#ef4444]" />
+                  <div className="w-2 h-2 rounded-full bg-danger" />
                   <span className="text-[10px] font-bold text-ink-muted">Pengeluaran</span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -709,7 +742,7 @@ export default function AnalyticsPage() {
                 <p className="text-xs font-semibold">Belum ada data pengeluaran</p>
               </div>
             ) : (
-              <div className="h-44 w-full relative min-h-[176px]">
+              <div className="h-44 w-full relative min-h-44">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={barChartDayData} barSize={14}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
@@ -762,7 +795,7 @@ export default function AnalyticsPage() {
                 <p className="text-xs font-semibold">Belum cukup data untuk ditampilkan</p>
               </div>
             ) : (
-              <div className="h-44 w-full relative min-h-[176px]">
+              <div className="h-44 w-full relative min-h-44">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={barChartTimeData} barSize={20}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
@@ -803,7 +836,7 @@ export default function AnalyticsPage() {
       <AnimatePresenceFramer>
         {isCategorySheetOpen && (
           <motionFramer.div 
-            className="fixed inset-0 z-[100] flex items-end justify-center"
+            className="fixed inset-0 z-100 flex items-end justify-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -815,7 +848,7 @@ export default function AnalyticsPage() {
             onClick={() => setIsCategorySheetOpen(false)}
           >
             <motionFramer.div 
-              className="w-full max-w-[480px] rounded-t-[24px] border-t px-6 pt-3 pb-8 flex flex-col bg-white border-hairline max-h-[70vh]"
+              className="w-full max-w-120 rounded-t-3xl border-t px-6 pt-3 pb-8 flex flex-col bg-white border-hairline max-h-[70vh]"
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
@@ -876,7 +909,7 @@ export default function AnalyticsPage() {
       <AnimatePresenceFramer>
         {isWalletSheetOpen && (
           <motionFramer.div 
-            className="fixed inset-0 z-[100] flex items-end justify-center"
+            className="fixed inset-0 z-100 flex items-end justify-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -888,7 +921,7 @@ export default function AnalyticsPage() {
             onClick={() => setIsWalletSheetOpen(false)}
           >
             <motionFramer.div 
-              className="w-full max-w-[480px] rounded-t-[24px] border-t px-6 pt-3 pb-8 flex flex-col bg-white border-hairline max-h-[70vh]"
+              className="w-full max-w-120 rounded-t-3xl border-t px-6 pt-3 pb-8 flex flex-col bg-white border-hairline max-h-[70vh]"
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
@@ -929,12 +962,13 @@ export default function AnalyticsPage() {
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div 
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
-                          style={{ backgroundColor: w.color + '15', color: w.color }}
-                        >
-                          {w.icon || '💼'}
-                        </div>
+                        <WalletLogo 
+                          logo={w.logo} 
+                          icon={w.icon} 
+                          color={w.color} 
+                          size={32} 
+                          IconComp={WALLET_ICONS[w.icon] || WalletIcon} 
+                        />
                         <span className="font-semibold">{w.name}</span>
                       </div>
                       <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${

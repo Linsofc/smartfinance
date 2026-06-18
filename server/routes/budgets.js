@@ -1,6 +1,7 @@
 import express from 'express';
 import Budget from '../models/Budget.js';
 import auth from '../middleware/auth.js';
+import { getCache, setCache, invalidateCache } from '../utils/cache.js';
 
 const router = express.Router();
 
@@ -12,7 +13,14 @@ router.use(auth);
 // @access  Private
 router.get('/', async (req, res) => {
   try {
+    const cacheKey = `budgets:${req.user._id}`;
+    const cached = getCache(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
     const budgets = await Budget.find({ userId: req.user._id });
+    setCache(cacheKey, budgets);
     res.json(budgets);
   } catch (error) {
     res.status(500).json({ message: 'Gagal mengambil data anggaran', error: error.message });
@@ -37,6 +45,7 @@ router.post('/', async (req, res) => {
       { new: true, upsert: true, runValidators: true }
     );
 
+    invalidateCache(`budgets:${req.user._id}`);
     res.status(200).json(budget);
   } catch (error) {
     res.status(400).json({ message: 'Gagal menyimpan anggaran', error: error.message });
@@ -57,6 +66,7 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Anggaran tidak ditemukan' });
     }
 
+    invalidateCache(`budgets:${req.user._id}`);
     res.json({ message: 'Anggaran berhasil dihapus' });
   } catch (error) {
     res.status(500).json({ message: 'Gagal menghapus anggaran', error: error.message });

@@ -4,7 +4,6 @@ import { ArrowLeft, Plus, Trash2, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDataCache } from '../context/DataCacheContext';
 import { useAuth } from '../context/AuthContext';
-import api from '../api/axios';
 
 const EXPENSE_CATEGORIES = [
   { name: 'Makanan', icon: '🍲', color: '#ff7a3d20' },
@@ -40,50 +39,48 @@ export default function BudgetSettingsPage() {
   // Custom Categories state
   const [customExpenseCategories, setCustomExpenseCategories] = useState([]);
 
-  // Load custom categories from localStorage + auto-discover from transaction history
+  // Load custom categories from database + auto-discover from transaction history
   useEffect(() => {
     if (!user?._id) return;
     
     const loadCategories = async () => {
-      // 1. Load from localStorage
-      const savedExpense = localStorage.getItem(`custom_expense_categories_${user._id}`);
-      let currentExpense = savedExpense ? JSON.parse(savedExpense) : [];
-      setCustomExpenseCategories(currentExpense);
-
-      // 2. Discover custom categories from all transaction records
       try {
-        const res = await api.get('/transactions');
-        const txs = res.data.transactions || [];
+        const cats = await cache.fetchCategories();
         
-        let updatedExpense = [...currentExpense];
-        let changed = false;
-
+        // Discover custom categories from transaction history (cached)
+        let txsData = [];
+        try {
+          txsData = await cache.fetchAllTransactions();
+        } catch (err) {
+          console.error('Error fetching all transactions for auto-discovery in budget:', err);
+        }
+        
+        const txs = txsData.transactions || txsData || [];
+        
+        let discovered = [...cats];
         txs.forEach(t => {
           if (!t.category || t.type !== 'EXPENSE') return;
           
           const existsInDefault = EXPENSE_CATEGORIES.some(c => c.name === t.category);
-          const existsInCustom = updatedExpense.some(c => c.name === t.category);
+          const existsInCustom = discovered.some(c => c.name === t.category && c.type === 'EXPENSE');
           if (!existsInDefault && !existsInCustom) {
-            updatedExpense.push({
+            discovered.push({
               name: t.category,
               icon: '📁',
-              color: '#64748b20'
+              color: '#64748b20',
+              type: 'EXPENSE'
             });
-            changed = true;
           }
         });
 
-        if (changed) {
-          setCustomExpenseCategories(updatedExpense);
-          localStorage.setItem(`custom_expense_categories_${user._id}`, JSON.stringify(updatedExpense));
-        }
+        setCustomExpenseCategories(discovered.filter(c => c.type === 'EXPENSE' || !c.type));
       } catch (err) {
-        console.error('Error auto-discovering categories in budget:', err);
+        console.error('Error loading custom categories in budget:', err);
       }
     };
 
     loadCategories();
-  }, [user, isModalOpen]);
+  }, [user, isModalOpen, cache]);
 
   const formatCurrency = (amount) => {
     return 'Rp' + amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -256,7 +253,7 @@ export default function BudgetSettingsPage() {
       <AnimatePresence>
         {isModalOpen && (
           <motion.div 
-            className="fixed inset-0 z-[60] flex items-end justify-center"
+            className="fixed inset-0 z-60 flex items-end justify-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -268,7 +265,7 @@ export default function BudgetSettingsPage() {
             onClick={() => setIsModalOpen(false)}
           >
             <motion.div 
-              className="w-full flex flex-col overflow-hidden bg-white border border-hairline rounded-t-[24px]"
+              className="w-full flex flex-col overflow-hidden bg-white border border-hairline rounded-t-3xl"
               style={{ 
                 height: 'auto',
                 maxHeight: '85dvh',
@@ -313,7 +310,7 @@ export default function BudgetSettingsPage() {
 
               {/* Form Content */}
               <div className="p-6 overflow-y-auto">
-                <div className="rounded-[24px] border border-hairline bg-slate-50/50 p-5">
+                <div className="rounded-3xl border border-hairline bg-slate-50/50 p-5">
                   <div className="flex gap-4">
                     {/* Icon display */}
                     <div className="w-12 h-12 rounded-full bg-white border border-hairline flex items-center justify-center text-2xl shrink-0 shadow-sm">
@@ -365,7 +362,7 @@ export default function BudgetSettingsPage() {
       <AnimatePresence>
         {isCategoryDrawerOpen && (
           <motion.div 
-            className="fixed inset-0 z-[100] flex items-end justify-center"
+            className="fixed inset-0 z-100 flex items-end justify-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -377,7 +374,7 @@ export default function BudgetSettingsPage() {
             onClick={() => setIsCategoryDrawerOpen(false)}
           >
             <motion.div 
-              className="w-full rounded-t-[24px] border-t px-6 pt-3 pb-8 flex flex-col bg-white border-hairline"
+              className="w-full rounded-t-3xl border-t px-6 pt-3 pb-8 flex flex-col bg-white border-hairline"
               style={{ 
                 height: '55dvh',
                 maxWidth: '480px',
