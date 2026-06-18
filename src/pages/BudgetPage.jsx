@@ -85,108 +85,64 @@ export default function BudgetPage() {
   return (
     <div className="page-container">
       {/* Header */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between', 
-        marginBottom: '24px',
-        paddingTop: '8px'
-      }}>
-        <h1 style={{ 
-          fontSize: '24px', 
-          fontWeight: 700, 
-          color: '#1e293b', 
-          fontFamily: 'Outfit, sans-serif',
-          letterSpacing: '-0.5px',
-          margin: 0
-        }}>Anggaran</h1>
+      <div className="flex items-center justify-between mb-6 pt-2">
+        <h1 className="text-[28px] font-extrabold text-slate-900 tracking-tight leading-tight">
+          Anggaran
+        </h1>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={() => changeMonth(-1)} style={{ 
-            color: '#1e293b', 
-            background: 'none', 
-            border: 'none',
-            padding: '4px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center'
-          }}>
-            <ChevronLeft size={20} />
+        <div className="flex items-center gap-1.5 bg-slate-100/80 px-2 py-1.5 rounded-full border border-slate-200/50">
+          <button 
+            onClick={() => changeMonth(-1)} 
+            className="text-slate-600 hover:text-slate-800 hover:bg-white active:scale-90 p-1 rounded-full transition-all"
+          >
+            <ChevronLeft size={16} />
           </button>
-          <span style={{ 
-            color: '#1e293b', 
-            fontWeight: 600, 
-            fontSize: '13px', 
-            width: '100px', 
-            textAlign: 'center' 
-          }}>
+          <span className="text-slate-700 font-bold text-xs px-1.5 min-w-[80px] text-center">
             {getMonthName(currentDate)}
           </span>
-          <button onClick={() => changeMonth(1)} style={{ 
-            color: '#1e293b', 
-            background: 'none', 
-            border: 'none',
-            padding: '4px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center'
-          }}>
-            <ChevronRight size={20} />
+          <button 
+            onClick={() => changeMonth(1)} 
+            className="text-slate-600 hover:text-slate-800 hover:bg-white active:scale-90 p-1 rounded-full transition-all"
+          >
+            <ChevronRight size={16} />
           </button>
         </div>
 
         <button 
           onClick={() => navigate('/budget/settings')}
-          style={{
-            width: '40px',
-            height: '40px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '50%',
-            backgroundColor: '#ffffff',
-            color: '#1e293b',
-            border: '1px solid #e2e8f0',
-            cursor: 'pointer'
-          }}
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition-colors shadow-sm"
         >
-          <Settings size={22} />
+          <Settings size={20} />
         </button>
       </div>
 
       {loading ? (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, minHeight: '40vh' }}>
-          <div className="loading-spinner" />
+        <div className="flex items-center justify-center flex-1 min-h-[40vh]">
+          <div className="w-8 h-8 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
         </div>
       ) : (
         <motion.div 
-          style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+          className="flex flex-col gap-4"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
         >
           {/* Main Budget Card */}
-          <div style={{
-            background: 'linear-gradient(135deg, #1155cc, #1890ff)',
-            borderRadius: '24px',
-            padding: '24px',
-            marginBottom: '8px',
-            boxShadow: '0 8px 32px rgba(24, 144, 255, 0.15)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '20px' }}>
+          <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-[24px] p-6 text-white shadow-lg shadow-blue-500/10">
+            <div className="flex justify-between items-end mb-5">
               <div>
-                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '12px', fontWeight: 500, marginBottom: '4px' }}>Anggaran</p>
-                <h2 style={{ color: '#ffffff', fontSize: '28px', fontWeight: 700, margin: 0 }}>{formatCurrency(totalBudget)}</h2>
+                <p className="text-blue-100 text-xs font-semibold uppercase tracking-wider mb-1">Total Anggaran</p>
+                <h2 className="text-3xl font-extrabold tracking-tight">{formatCurrency(totalBudget)}</h2>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '12px', fontWeight: 500, marginBottom: '4px' }}>Pengeluaran</p>
-                <h2 style={{ color: '#ffffff', fontSize: '20px', fontWeight: 700, margin: 0 }}>{formatCurrency(totalSpent)}</h2>
+              <div className="text-right">
+                <p className="text-blue-100 text-xs font-semibold uppercase tracking-wider mb-1">Total Terpakai</p>
+                <h2 className="text-xl font-bold">{formatCurrency(totalSpent)}</h2>
               </div>
             </div>
             
             {/* Main Progress Bar */}
-            <div style={{ height: '10px', backgroundColor: 'rgba(255,255,255,0.3)', borderRadius: '9999px', overflow: 'hidden', width: '100%' }}>
+            <div className="h-2.5 bg-white/20 rounded-full overflow-hidden w-full">
               <motion.div 
-                style={{ height: '100%', backgroundColor: '#ffffff', borderRadius: '9999px' }}
+                className="h-full bg-white rounded-full"
                 initial={{ width: 0 }}
                 animate={{ width: `${overallProgress}%` }}
                 transition={{ duration: 1, ease: "easeOut" }}
@@ -196,62 +152,64 @@ export default function BudgetPage() {
 
           {/* Budget List */}
           {budgets.length === 0 ? (
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '40px 24px', 
-              backgroundColor: '#ffffff', 
-              borderRadius: '24px', 
-              border: '1px solid #e2e8f0',
-              marginTop: '12px' 
-            }}>
-              <div style={{ fontSize: '32px', marginBottom: '12px' }}>🎯</div>
-              <h3 style={{ color: '#1e293b', fontWeight: 600, marginBottom: '4px', fontSize: '15px' }}>Belum Ada Anggaran</h3>
-              <p style={{ color: '#64748b', fontSize: '13px' }}>Tekan tombol pengaturan (⚙️) di sudut kanan atas untuk mulai membuat anggaran Anda.</p>
+            <div className="text-center py-12 px-6 bg-white rounded-[24px] border border-slate-100 shadow-sm mt-2">
+              <div className="text-4xl mb-4">🎯</div>
+              <h3 className="text-slate-800 font-bold text-base mb-1.5">Belum Ada Anggaran</h3>
+              <p className="text-slate-500 text-xs leading-relaxed max-w-[280px] mx-auto">
+                Tekan tombol pengaturan (⚙️) di sudut kanan atas untuk mulai membuat anggaran bulanan Anda.
+              </p>
             </div>
           ) : (
             budgets.map((budget) => {
               const spent = calculateCategorySpent(budget.category);
               const progressRaw = (spent / budget.amount) * 100;
               const progress = Math.min(progressRaw, 100);
+              const remaining = budget.amount - spent;
+              const isOver = remaining < 0;
               
-              let barColor = '#1e9045'; // Green
-              if (progressRaw >= 100) barColor = '#ef4444'; // Red
-              else if (progressRaw >= 80) barColor = '#f59e0b'; // Yellow
+              let barColor = '#10b981'; // Green
+              let textColor = 'text-emerald-600';
+              let bgColor = 'bg-emerald-50';
+              if (progressRaw >= 100) {
+                barColor = '#ef4444'; // Red
+                textColor = 'text-rose-600';
+                bgColor = 'bg-rose-50';
+              } else if (progressRaw >= 80) {
+                barColor = '#f59e0b'; // Yellow
+                textColor = 'text-amber-600';
+                bgColor = 'bg-amber-50';
+              }
 
               return (
-                <div key={budget._id} style={{
-                  backgroundColor: '#ffffff',
-                  borderRadius: '24px',
-                  padding: '20px',
-                  border: '1px solid #e2e8f0'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
-                    <div style={{
-                      width: '48px',
-                      height: '48px',
-                      borderRadius: '50%',
-                      backgroundColor: '#f1f5f9',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '24px',
-                      flexShrink: 0
-                    }}>
+                <div key={budget._id} className="bg-white rounded-[24px] p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-2xl shrink-0">
                       {budget.icon}
                     </div>
                     
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '4px' }}>
-                        <h3 style={{ color: '#1e293b', fontWeight: 600, fontSize: '15px', margin: 0 }}>{budget.category}</h3>
-                        <p style={{ color: '#64748b', fontSize: '11px', fontWeight: 600, fontFamily: 'monospace', margin: 0 }}>
-                          {formatCurrency(spent)} / {formatCurrency(budget.amount)}
-                        </p>
+                    <div className="flex-1 min-w-0 flex flex-col justify-between">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="min-w-0">
+                          <h3 className="text-slate-800 font-bold text-sm truncate">{budget.category}</h3>
+                          <p className={`text-[10px] font-bold mt-1 px-2 py-0.5 rounded-full inline-block ${bgColor} ${textColor}`}>
+                            {isOver ? `Over ${formatCurrency(Math.abs(remaining))}` : `Tersisa ${formatCurrency(remaining)}`}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-slate-800 font-bold text-xs">
+                            {formatCurrency(spent)}
+                          </p>
+                          <p className="text-slate-400 text-[10px] font-semibold mt-0.5">
+                            dari {formatCurrency(budget.amount)}
+                          </p>
+                        </div>
                       </div>
                       
                       {/* Category Progress Bar */}
-                      <div style={{ height: '10px', backgroundColor: '#f1f5f9', borderRadius: '9999px', overflow: 'hidden', marginTop: '6px', width: '100%' }}>
+                      <div className="h-2 bg-slate-50 border border-slate-100 rounded-full overflow-hidden w-full mt-2">
                         <motion.div 
-                          style={{ height: '100%', borderRadius: '9999px', backgroundColor: barColor }}
+                          className="h-full rounded-full"
+                          style={{ backgroundColor: barColor }}
                           initial={{ width: 0 }}
                           animate={{ width: `${progress}%` }}
                           transition={{ duration: 1, ease: "easeOut", delay: 0.1 }}

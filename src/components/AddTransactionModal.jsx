@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ArrowLeft, Plus, X } from 'lucide-react';
 import { useDataCache } from '../context/DataCacheContext';
@@ -9,7 +9,7 @@ const INCOME_CATEGORIES = [
   { name: 'Investasi', icon: '📈', color: '#1e9045' },
   { name: 'Hadiah Diterima', icon: '🎁', color: '#d44df0' },
   { name: 'Bisnis', icon: '🏪', color: '#6a4cf5' },
-  { name: 'Bonus', icon: 'blank', color: '#ff5577' },
+  { name: 'Bonus', icon: '💸', color: '#ff5577' },
   { name: 'UANG BULANAN', icon: '💰', color: '#1e9045' },
   { name: 'Lainnya', icon: '🛍️', color: '#64748b' },
   { name: 'terima', icon: '💳', color: '#f59e0b' }
@@ -28,12 +28,25 @@ const EXPENSE_CATEGORIES = [
   { name: 'Lainnya', icon: '📦', color: '#64748b' }
 ];
 
-const EMOJI_DICTIONARY = {
-  'Smiley': ['😀','😁','😂','🤣','😃','😄','😅','😆','😉','😊','😋','😎','😍','😘','😗','😙','😚','☺️','🙂','🤗','🤩','🤔','🤨','😐','😑','😶','🙄','😏','😣','😥','😮','🤐','😯','😪','😫','😴','😌','😛','😜','😝','🤤','😒','😓','😔','😕','🙃','🤑','😲','☹️','🙁','😖','😞','😟','😤','😢','😭','😦','😧','😨','😩','🤯','😬','😰','😱'],
-  'Hewan': ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦','🐤','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟','🦗','🕷','🕸','🦂','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🐊','🐅','🐆','🦓','🦍','🦧','🐘','🦛','🦏','🐪','🐫','🦒','🦘','🐃','🐂','🐄','🐎','🐖','🐏','🐑','🦙','🐐','🦌','🐕','🐩','🦮','🐕‍🦺','🐈','🐈‍⬛','🐓','🦃','🦚','🦜','🦢','🦩','🕊','🐇','🦝','🦨','🦡','🦦','🦥','🐁','🐀','🐿','🦔'],
-  'Makanan': ['🍏','🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌶','🌽','🥕','🧄','🧅','🥔','🍠','🥐','🥯','🍞','🥖','🥨','🧀','🥚','🍳','🧈','🥞','🧇','🥓','🥩','🍗','🍖','🦴','🌭','🍔','🍟','🍕','🥪','🥙','🧆','🌮','🌯','🥗','🥘','🥫','🍝','🍜','🍲','🍛','🍣','🍱','🥟','🦪','🍤','🍙','🍚','🍘','🍥','🥠','🥮','🍢','🍡','🍧','🍨','🍦','🥧','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','🌰','🥜','🍯','🥛','🍼','☕','🍵','🧃','🥤','🍶','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🍾','🧊','🥄','🍴','🍽','🥣','🥡','🥢','🧂'],
-  'Aktivitas': ['⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🪀','🏓','🏸','🏒','🏑','🥍','🏏','🪃','🥅','⛳','🪁','🏹','🎣','🤿','🥊','🥋','🎽','🛹','🛼','🛷','⛸','🥌','🎿','⛷','🏂','🪂','🏋️','🤼','🤸','⛹️','🤺','🤾','🏌️','🏇','🧘','🏄','🏊','🤽','🚣','🧗','🚵','🚴','🏆','🥇','🥈','🥉','🏅','🎖','🏵','🎗','🎫','🎟','🎪','🤹','🎭','🩰','🎨','🎬','🎤','🎧','🎼','🎹','🥁','🎷','🎺','🎸','🪕','🎻','🎲','♟','🎯','🎳','🎮','🎰','🧩']
-};
+const CURATED_EMOJIS = [
+  // Makanan & Jajanan
+  '🍲', '🍿', '🍕', '🍔', '🥐', '🍰', '🥞', '🍜', '☕', '🥤',
+  // Jalan-jalan & Transportasi
+  '🚗', '🏍️', '🚲', '🚌', '✈️', '🏖️', '⛺', '⛽', '🎫', '🗺️',
+  // Hiburan & Rekreasi
+  '🎮', '🎬', '🎤', '🎧', '🎡', '🎟️', '🎳', '⚽', '🎯',
+  // Belanja & Fashion
+  '🛒', '🛍️', '👕', '👟', '💄', '💍', '🕶️', '👜',
+  // Rumah & Tagihan
+  '🏠', '🔌', '📶', '💧', '💸', '💳', '💰', '🔑', '🛠️',
+  // Kesehatan & Olahraga
+  '💊', '🏥', '🩺', '🦷', '🏋️', '🚴', '🧘', '🩹',
+  // Pendidikan & Pekerjaan
+  '📚', '💼', '💻', '✏️', '🎓', '📎', '🗓️',
+  // Hadiah & Keluarga
+  '🎁', '✉️', '🧸', '💐', '👶', '🐾', '❤️', '💡'
+];
+
 
 export default function AddTransactionModal({ isOpen, onClose, onSubmit, onDelete, transaction }) {
   const [type, setType] = useState('INCOME'); // Defaulting to INCOME to match the first mockup screen
@@ -49,24 +62,16 @@ export default function AddTransactionModal({ isOpen, onClose, onSubmit, onDelet
   const [selectedWallet, setSelectedWallet] = useState(null);
   const [categoryDrawerOpen, setCategoryDrawerOpen] = useState(false);
   const [walletDrawerOpen, setWalletDrawerOpen] = useState(false);
+  const dateInputRef = useRef(null);
 
   // Custom Categories
   const [customIncomeCategories, setCustomIncomeCategories] = useState([]);
   const [customExpenseCategories, setCustomExpenseCategories] = useState([]);
   const [showAddCustomCategory, setShowAddCustomCategory] = useState(false);
   const [newCustomCategoryName, setNewCustomCategoryName] = useState('');
-  const [newCustomCategoryIcon, setNewCustomCategoryIcon] = useState('✈️');
+  const [newCustomCategoryIcon, setNewCustomCategoryIcon] = useState('🍲');
   const [showIconPicker, setShowIconPicker] = useState(false);
-  const [emojiCategory, setEmojiCategory] = useState('Smiley');
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 480);
 
-  useEffect(() => {
-    const handleResize = () => {
-      setIsDesktop(window.innerWidth >= 480);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   // Fetch wallets on modal open
   const cache = useDataCache();
@@ -156,6 +161,18 @@ export default function AddTransactionModal({ isOpen, onClose, onSubmit, onDelet
     return `${day} ${monthName} ${year} (${dayName})`;
   };
 
+  const handleDateClick = (e) => {
+    e.stopPropagation();
+    if (dateInputRef.current) {
+      try {
+        dateInputRef.current.showPicker();
+      } catch (err) {
+        console.error('showPicker failed:', err);
+        dateInputRef.current.click();
+      }
+    }
+  };
+
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     setError('');
@@ -201,41 +218,49 @@ export default function AddTransactionModal({ isOpen, onClose, onSubmit, onDelet
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          onClick={handleBackAndReset}
           style={{ 
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            backgroundColor: 'rgba(15, 23, 42, 0.4)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
             zIndex: 60,
             display: 'flex',
-            alignItems: isDesktop ? 'center' : 'flex-end',
+            alignItems: 'flex-end',
             justifyContent: 'center',
-            padding: isDesktop ? '24px' : '0px'
+            padding: '0px'
           }}
         >
           {/* Main Transaction Form Sheet */}
           <motion.div
             className="w-full flex flex-col overflow-hidden relative"
-            initial={isDesktop ? { scale: 0.95, opacity: 0 } : { y: '100%' }}
-            animate={isDesktop ? { scale: 1, opacity: 1 } : { y: 0 }}
-            exit={isDesktop ? { scale: 0.95, opacity: 0 } : { y: '100%' }}
-            transition={isDesktop ? { duration: 0.15 } : { type: 'spring', damping: 28, stiffness: 280 }}
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 28, stiffness: 280 }}
             style={{ 
               backgroundColor: '#FFFFFF',
               border: '1px solid #e2e8f0',
-              borderBottom: isDesktop ? '1px solid #e2e8f0' : 'none',
-              borderRadius: isDesktop ? '28px' : '28px 28px 0 0',
+              borderBottom: 'none',
+              borderRadius: '24px 24px 0 0',
               color: '#1e293b',
-              height: isDesktop ? '100%' : '100dvh',
-              maxHeight: isDesktop ? '85dvh' : '100dvh',
-              maxWidth: '480px'
+              height: 'auto',
+              maxHeight: '85dvh',
+              maxWidth: '480px',
+              width: '100%',
+              boxShadow: '0 -10px 25px -5px rgba(0, 0, 0, 0.1), 0 -8px 10px -6px rgba(0, 0, 0, 0.1)'
             }}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Pull Handle bar */}
+            <div className="flex justify-center pt-3 shrink-0">
+              <div className="w-10 h-1 rounded-full bg-slate-200" />
+            </div>
+
             {/* Header */}
             <div 
-              className="flex items-center justify-between px-4 py-4 shrink-0"
+              className="flex items-center justify-between px-4 pb-3 pt-1 shrink-0"
               style={{ borderBottom: '1px solid #e2e8f0' }}
             >
               <button
@@ -267,7 +292,7 @@ export default function AddTransactionModal({ isOpen, onClose, onSubmit, onDelet
               }}
             >
               {/* Rp Amount Display & Invisible Input overlay */}
-              <div className="flex flex-col items-center justify-center py-12 relative">
+              <div className="flex flex-col items-center justify-center py-8 relative">
                 <div className="flex items-center justify-center select-none cursor-pointer">
                   <span className="text-4xl font-semibold mr-2" style={{ color: '#94a3b8' }}>Rp</span>
                   <span 
@@ -360,7 +385,8 @@ export default function AddTransactionModal({ isOpen, onClose, onSubmit, onDelet
 
                 {/* Date Selector Row with Overlay Input */}
                 <div 
-                  className="w-full flex items-center justify-between p-4 hover:bg-surface-2 transition-colors relative text-left"
+                  onClick={handleDateClick}
+                  className="w-full flex items-center justify-between p-4 hover:bg-surface-2 transition-colors relative text-left cursor-pointer"
                   style={{ borderBottom: '1px solid #e2e8f0' }}
                 >
                   <div className="flex items-center gap-3">
@@ -376,15 +402,17 @@ export default function AddTransactionModal({ isOpen, onClose, onSubmit, onDelet
                   </div>
                   <ChevronRight size={18} className="text-ink-muted" />
                   <input
+                    ref={dateInputRef}
                     type="date"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="absolute inset-0 cursor-pointer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute inset-0 pointer-events-none"
                     style={{ 
                       opacity: 0, 
                       backgroundColor: 'transparent',
                       border: 'none',
-                      zIndex: 20
+                      zIndex: -1
                     }}
                   />
                 </div>
@@ -479,7 +507,7 @@ export default function AddTransactionModal({ isOpen, onClose, onSubmit, onDelet
                   }}
                 >
                   <motion.div
-                    className="w-full rounded-t-[28px] flex flex-col overflow-hidden"
+                    className="w-full rounded-t-[24px] flex flex-col overflow-hidden"
                     initial={{ y: '100%' }}
                     animate={{ y: 0 }}
                     exit={{ y: '100%' }}
@@ -490,7 +518,7 @@ export default function AddTransactionModal({ isOpen, onClose, onSubmit, onDelet
                       color: '#1e293b',
                       maxHeight: '85dvh',
                       height: '100%',
-                      borderRadius: isDesktop ? '28px' : '28px 28px 0 0'
+                      borderRadius: '24px 24px 0 0'
                     }}
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -549,56 +577,23 @@ export default function AddTransactionModal({ isOpen, onClose, onSubmit, onDelet
                     >
                       {showIconPicker ? (
                         <div className="flex flex-col mt-2 h-full">
-                          {/* Search bar */}
-                          <div 
-                            className="rounded-[16px] flex items-center px-4 py-3.5 mb-5 shrink-0 border"
-                            style={{ backgroundColor: '#f1f5f9', borderColor: '#e2e8f0' }}
-                          >
-                            <input 
-                              type="text" 
-                              placeholder="Cari" 
-                              className="bg-transparent border-none text-sm text-ink w-full focus:outline-none" 
-                            />
-                          </div>
-                          {/* Categories Pills */}
-                          <div className="flex gap-2 overflow-x-auto pb-4 shrink-0 no-scrollbar">
-                            {Object.keys(EMOJI_DICTIONARY).map(cat => {
-                              const icons = { Smiley: '😀', Hewan: '🐶', Makanan: '🍕', Aktivitas: '⚽' };
-                              const isActive = emojiCategory === cat;
-                              return (
-                                <button 
-                                  key={cat}
-                                  onClick={() => setEmojiCategory(cat)}
-                                  className="px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 border transition-opacity hover:opacity-80"
-                                  style={{ 
-                                    backgroundColor: isActive ? '#e6f7ff' : '#f1f5f9', 
-                                    color: isActive ? '#1890ff' : '#64748b', 
-                                    borderColor: isActive ? '#1890ff' : '#e2e8f0' 
-                                  }}
-                                >
-                                  <span className="text-sm">{icons[cat]}</span> {cat}
-                                </button>
-                              );
-                            })}
-                          </div>
-                          {/* Emoji Grid (Bulletproof Inline Styles) */}
+                          {/* Emoji Grid (Curated grid, no search/pills) */}
                           <div 
                             className="mt-2 pb-12"
                             style={{
                               display: 'grid',
-                              gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
-                              gap: '8px'
+                              gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+                              gap: '12px'
                             }}
                           >
-                             {(EMOJI_DICTIONARY[emojiCategory] || EMOJI_DICTIONARY['Smiley']).map((emoji, idx) => (
+                             {CURATED_EMOJIS.map((emoji, idx) => (
                                <button 
                                  key={`${emoji}-${idx}`} 
                                  onClick={() => { setNewCustomCategoryIcon(emoji); setShowIconPicker(false); }} 
-                                 className="flex items-center justify-center rounded-2xl transition-opacity hover:opacity-80 border border-slate-100"
+                                 className="flex items-center justify-center rounded-2xl transition-all hover:scale-105 active:scale-95 bg-slate-50 border border-slate-100 hover:bg-slate-100/80"
                                  style={{ 
-                                   backgroundColor: '#f1f5f9',
-                                   fontSize: '22px',
-                                   aspectRatio: '4/5'
+                                   fontSize: '24px',
+                                   aspectRatio: '1'
                                  }}
                                >
                                  {emoji}
@@ -715,7 +710,7 @@ export default function AddTransactionModal({ isOpen, onClose, onSubmit, onDelet
                   }}
                 >
                   <motion.div
-                    className="w-full rounded-t-[28px] flex flex-col"
+                    className="w-full rounded-t-[24px] flex flex-col"
                     initial={{ y: '100%' }}
                     animate={{ y: 0 }}
                     exit={{ y: '100%' }}
@@ -726,7 +721,7 @@ export default function AddTransactionModal({ isOpen, onClose, onSubmit, onDelet
                       color: '#1e293b',
                       maxHeight: '85%',
                       height: 'auto',
-                      borderRadius: isDesktop ? '28px' : '28px 28px 0 0'
+                      borderRadius: '24px 24px 0 0'
                     }}
                     onClick={(e) => e.stopPropagation()}
                   >

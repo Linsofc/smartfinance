@@ -324,7 +324,7 @@ export default function SettingsPage() {
           <MenuItem
             icon={<Info size={18} />}
             label="Tentang Aplikasi"
-            sublabel="SmartFinance v1.4.0"
+            sublabel="SmartFinance v1.5.0"
           />
         </motion.div>
 
