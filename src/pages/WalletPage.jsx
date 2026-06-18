@@ -230,7 +230,7 @@ export default function WalletPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight" style={{ letterSpacing: '-1px' }}>
+          <h1 className="text-2xl font-heading font-bold tracking-tight" style={{ letterSpacing: '-1px' }}>
             Dompet
           </h1>
           <p className="text-ink-muted text-xs mt-1">Kelola dompet dan saldo Anda</p>
@@ -271,7 +271,7 @@ export default function WalletPage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-br from-gradient-violet to-gradient-magenta rounded-[24px] p-6 relative overflow-hidden"
+        className="bg-gradient-to-br from-brand-blue-dark to-brand-blue-light rounded-[24px] p-6 relative overflow-hidden"
       >
         <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4" />
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/4" />
@@ -368,7 +368,7 @@ export default function WalletPage() {
                           <p className="text-xs text-ink-muted mt-0.5">{wallet.type || 'Tunai'}</p>
                         </div>
                         <div className="text-right shrink-0 flex items-center gap-3">
-                          <span className="text-sm font-bold text-white tabular-nums">
+                          <span className="text-sm font-bold text-ink tabular-nums">
                             {formatRupiah(wallet.balance)}
                           </span>
                           <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -398,16 +398,11 @@ export default function WalletPage() {
         )}
       </div>
 
-      {/* Floating Action Button */}
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setShowAddModal(true)}
         className="fab-btn"
-        style={{
-          background: 'linear-gradient(135deg, #4f46e5, #3b82f6)',
-          boxShadow: '0 8px 25px rgba(59,130,246,0.3)',
-        }}
       >
         <Plus size={26} strokeWidth={2.5} />
       </motion.button>
@@ -472,7 +467,7 @@ export default function WalletPage() {
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                     className="w-full bg-surface-2 rounded-xl py-3 px-4 text-sm border border-hairline focus:border-accent-blue/50 transition-colors text-ink appearance-none"
-                    style={{ colorScheme: 'dark' }}
+                    style={{ colorScheme: 'light' }}
                   >
                     {categories.map(cat => (
                       <option key={cat} value={cat}>{cat}</option>
@@ -669,7 +664,7 @@ export default function WalletPage() {
                     onChange={(e) => setTransferData({ ...transferData, fromWalletId: e.target.value })}
                     required
                     className="w-full bg-surface-2 rounded-xl py-3 px-4 text-sm border border-hairline focus:border-accent-blue/50 transition-colors text-ink"
-                    style={{ colorScheme: 'dark' }}
+                    style={{ colorScheme: 'light' }}
                   >
                     <option value="">Pilih Dompet Asal</option>
                     {wallets.map(w => (
@@ -687,7 +682,7 @@ export default function WalletPage() {
                     onChange={(e) => setTransferData({ ...transferData, toWalletId: e.target.value })}
                     required
                     className="w-full bg-surface-2 rounded-xl py-3 px-4 text-sm border border-hairline focus:border-accent-blue/50 transition-colors text-ink"
-                    style={{ colorScheme: 'dark' }}
+                    style={{ colorScheme: 'light' }}
                   >
                     <option value="">Pilih Dompet Tujuan</option>
                     {wallets

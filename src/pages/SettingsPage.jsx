@@ -160,10 +160,14 @@ export default function SettingsPage() {
         animate={{ opacity: 1, y: 0 }}
         className="bg-surface-1 rounded-[20px] p-5 border border-hairline-soft flex items-center gap-4"
       >
-        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-gradient-violet to-gradient-magenta flex items-center justify-center shrink-0">
-          <span className="text-xl font-bold text-white">
-            {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-          </span>
+        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-gradient-violet to-gradient-magenta flex items-center justify-center shrink-0 overflow-hidden shadow-sm border-2 border-surface-1">
+          {user?.profilePicture ? (
+            <img src={user.profilePicture} alt="Profile" className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-xl font-bold text-white">
+              {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+            </span>
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-base font-semibold text-ink truncate">{user?.name || 'User'}</p>
@@ -183,12 +187,14 @@ export default function SettingsPage() {
             icon={<User size={18} />}
             label="Profil Saya"
             sublabel={user?.name || 'User'}
+            onClick={() => navigate('/settings/profile')}
           />
           <div className="h-px bg-hairline-soft mx-4" />
           <MenuItem
             icon={<Shield size={18} />}
             label="Keamanan"
             sublabel="Password & autentikasi"
+            onClick={() => navigate('/settings/security')}
           />
         </motion.div>
 

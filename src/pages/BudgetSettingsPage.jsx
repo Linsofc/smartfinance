@@ -5,15 +5,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useDataCache } from '../context/DataCacheContext';
 
 const EXPENSE_CATEGORIES = [
-  { name: 'Makanan', icon: '🍛', color: '#3b2323' },
-  { name: 'Transportasi', icon: '🚗', color: '#3d2b1a' },
-  { name: 'Belanja', icon: '🛍️', color: '#183d34' },
-  { name: 'Hiburan', icon: '🎬', color: '#3d2b1a' },
-  { name: 'Kesehatan', icon: '🏥', color: '#1a303d' },
-  { name: 'Utilitas', icon: '💡', color: '#2b1a3d' },
-  { name: 'Pendidikan', icon: '🎓', color: '#183d34' },
-  { name: 'Tabungan', icon: '🏦', color: '#3d1a30' },
-  { name: 'Hadiah', icon: '🎁', color: '#183d34' },
+  { name: 'Makanan', icon: '🍛', color: '#ff7a3d20' },
+  { name: 'Transportasi', icon: '🚗', color: '#6a4cf520' },
+  { name: 'Belanja', icon: '🛍️', color: '#1890ff20' },
+  { name: 'Hiburan', icon: '🎬', color: '#d44df020' },
+  { name: 'Kesehatan', icon: '🏥', color: '#ea3a3a20' },
+  { name: 'Utilitas', icon: '💡', color: '#f59e0b20' },
+  { name: 'Pendidikan', icon: '🎓', color: '#1e904520' },
+  { name: 'Tabungan', icon: '🏦', color: '#10b98120' },
+  { name: 'Hadiah', icon: '🎁', color: '#ff557720' },
 ];
 
 export default function BudgetSettingsPage() {
@@ -107,17 +107,17 @@ export default function BudgetSettingsPage() {
 
   if (isModalOpen) {
     return (
-      <div className="flex-1 flex flex-col pt-12 pb-8 px-6 bg-[#090909] relative h-full">
+      <div className="flex-1 flex flex-col pt-12 pb-8 px-6 bg-canvas relative h-full">
         {/* Header Add Budget */}
         <div className="flex items-center justify-between mb-8 shrink-0">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setIsModalOpen(false)} 
-              className="text-white hover:text-ink-muted transition-colors"
+              className="text-ink hover:text-ink-muted transition-colors"
             >
               <ArrowLeft size={24} />
             </button>
-            <h1 className="text-xl font-semibold text-white tracking-tight">
+            <h1 className="text-xl font-heading font-bold text-ink tracking-tight">
               {editId ? 'Edit Anggaran' : 'Tambah Anggaran'}
             </h1>
           </div>
@@ -125,7 +125,7 @@ export default function BudgetSettingsPage() {
             onClick={handleSave}
             disabled={isSubmitting || !category.trim() || !amount}
             className={`text-[15px] font-semibold transition-colors ${
-              !category.trim() || !amount ? 'text-[#3a3a3c]' : 'text-[#7b78ff] hover:text-white'
+              !category.trim() || !amount ? 'text-ink-muted/40' : 'text-accent-blue hover:text-accent-blue/80'
             }`}
           >
             Simpan
@@ -133,10 +133,7 @@ export default function BudgetSettingsPage() {
         </div>
 
         {/* Main Form Card */}
-        <div 
-          className="rounded-[24px] border p-5 pt-6"
-          style={{ backgroundColor: '#1c1c1f', borderColor: '#2c2c2e' }}
-        >
+        <div className="rounded-[24px] border border-hairline bg-white p-5 pt-6">
           <div className="flex">
             {/* Left Icon */}
             <div className="text-[28px] w-14 text-center shrink-0 pt-0.5">
@@ -151,37 +148,28 @@ export default function BudgetSettingsPage() {
                 onClick={() => setIsCategoryDrawerOpen(true)}
               >
                 <div>
-                  <p className="text-[#8e8e93] text-[13px] font-medium mb-0.5">Kategori</p>
-                  <p className="text-[#e5e5ea] text-[16px] font-medium">{category || 'Pilih Kategori'}</p>
+                  <p className="text-ink-muted text-[13px] font-medium mb-0.5">Kategori</p>
+                  <p className="text-ink text-[16px] font-semibold">{category || 'Pilih Kategori'}</p>
                 </div>
-                <ChevronRight size={20} className="text-[#8e8e93] group-hover:text-[#e5e5ea] transition-colors mr-2" />
+                <ChevronRight size={20} className="text-ink-muted group-hover:text-ink transition-colors mr-2" />
               </div>
 
               {/* Horizontal Line Divider */}
-              <div 
-                className="w-full mb-6" 
-                style={{ height: '1px', backgroundColor: '#2c2c2e' }} 
-              />
+              <div className="w-full border-b border-hairline-soft mb-6" />
 
               {/* Jumlah Input (Floating Label style) */}
               <div className="relative mb-2">
-                <div 
-                  className="absolute -top-2.5 left-3 px-1.5 z-10"
-                  style={{ backgroundColor: '#1c1c1f' }}
-                >
-                  <span className="text-[#8e8e93] text-[12px] font-medium">Jumlah</span>
+                <div className="absolute -top-2.5 left-3 px-1.5 z-10 bg-white">
+                  <span className="text-ink-muted text-[12px] font-medium">Jumlah</span>
                 </div>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#e5e5ea] font-mono text-[16px]">Rp</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink font-mono text-[16px]">Rp</span>
                   <input 
                     type="text"
                     inputMode="numeric"
                     value={amount}
                     onChange={handleAmountChange}
-                    className="w-full bg-transparent border rounded-xl pl-12 pr-4 py-4 text-white font-mono text-[17px] focus:outline-none transition-colors"
-                    style={{ borderColor: '#2c2c2e' }}
-                    onFocus={(e) => e.target.style.borderColor = '#7b78ff'}
-                    onBlur={(e) => e.target.style.borderColor = '#2c2c2e'}
+                    className="w-full bg-transparent border rounded-xl pl-12 pr-4 py-4 text-ink font-mono text-[17px] focus:outline-none transition-colors border-hairline focus:border-accent-blue/50"
                   />
                 </div>
               </div>
@@ -197,12 +185,12 @@ export default function BudgetSettingsPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
+              style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}
               onClick={() => setIsCategoryDrawerOpen(false)}
             >
               <motion.div 
-                className="w-full rounded-t-[32px] border-t px-6 pt-3 pb-8 flex flex-col"
-                style={{ height: '70dvh', backgroundColor: '#1c1c1f', borderColor: '#2c2c2e' }}
+                className="w-full rounded-t-[32px] border-t px-6 pt-3 pb-8 flex flex-col bg-white border-hairline"
+                style={{ height: '70dvh' }}
                 initial={{ y: '100%' }}
                 animate={{ y: 0 }}
                 exit={{ y: '100%' }}
@@ -211,10 +199,10 @@ export default function BudgetSettingsPage() {
               >
                 {/* Drag handle */}
                 <div className="flex justify-center mb-5 shrink-0">
-                  <div className="w-12 h-1.5 rounded-full bg-[#48484a]" />
+                  <div className="w-12 h-1.5 rounded-full bg-slate-200" />
                 </div>
                 
-                <h3 className="text-[22px] font-bold text-white mb-8 shrink-0 tracking-tight">Pilih Kategori</h3>
+                <h3 className="text-[22px] font-heading font-bold text-ink mb-8 shrink-0 tracking-tight">Pilih Kategori</h3>
                 
                 {/* Categories Grid */}
                 <div 
@@ -237,7 +225,7 @@ export default function BudgetSettingsPage() {
                       >
                         {c.icon}
                       </div>
-                      <span className="text-[#e5e5ea] text-[13px] font-medium">{c.name}</span>
+                      <span className="text-ink text-[13px] font-medium">{c.name}</span>
                     </button>
                   ))}
                 </div>
@@ -256,16 +244,16 @@ export default function BudgetSettingsPage() {
         <div className="flex items-center gap-4">
           <button 
             onClick={() => navigate('/budget')}
-            className="text-white hover:text-ink-muted transition-colors"
+            className="text-ink hover:text-ink-muted transition-colors"
           >
             <ArrowLeft size={24} />
           </button>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Anggaran Saya</h1>
+          <h1 className="text-2xl font-heading font-bold text-ink tracking-tight">Anggaran Saya</h1>
         </div>
         
         <button 
           onClick={() => handleOpenModal()}
-          className="text-[#7b78ff] hover:text-white transition-colors"
+          className="text-accent-blue hover:text-accent-blue/80 transition-colors"
         >
           <Plus size={28} />
         </button>
@@ -288,23 +276,23 @@ export default function BudgetSettingsPage() {
           {budgets.map(budget => (
             <div 
               key={budget._id} 
-              className="bg-[#1c1c1f] rounded-3xl p-5 border border-[#2c2c2e] flex items-center justify-between cursor-pointer hover:bg-[#2c2c2e] transition-colors"
+              className="bg-white rounded-3xl p-5 border border-hairline flex items-center justify-between cursor-pointer hover:bg-surface-2 transition-colors"
               onClick={() => handleOpenModal(budget)}
             >
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-[#141414] border border-[#2c2c2e] flex items-center justify-center text-2xl shrink-0">
+                <div className="w-12 h-12 rounded-full bg-surface-2 border border-hairline-soft flex items-center justify-center text-2xl shrink-0">
                   {budget.icon}
                 </div>
-                <h3 className="text-white font-medium text-[16px]">{budget.category}</h3>
+                <h3 className="text-ink font-semibold text-[16px]">{budget.category}</h3>
               </div>
               
               <div className="flex items-center gap-4">
-                <p className="text-white font-medium font-mono text-[14px]">
+                <p className="text-ink font-semibold font-mono text-[14px]">
                   {formatCurrency(budget.amount)}
                 </p>
                 <button 
                   onClick={(e) => { e.stopPropagation(); handleDelete(budget._id); }}
-                  className="w-8 h-8 flex items-center justify-center text-[#ff5577] hover:bg-[#ff5577]/20 rounded-full transition-colors"
+                  className="w-8 h-8 flex items-center justify-center text-danger hover:bg-danger/10 rounded-full transition-colors"
                 >
                   <Trash2 size={16} />
                 </button>

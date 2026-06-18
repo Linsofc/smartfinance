@@ -8,8 +8,8 @@ import {
 import { useTransactions } from '../context/TransactionContext';
 
 const CHART_COLORS = [
-  '#ff7a3d', '#6a4cf5', '#d44df0', '#0099ff', '#22c55e',
-  '#ff5577', '#999999', '#f59e0b', '#10b981', '#8b5cf6',
+  '#ff7a3d', '#6a4cf5', '#d44df0', '#1890ff', '#1e9045',
+  '#ff5577', '#64748b', '#f59e0b', '#10b981', '#8b5cf6',
 ];
 
 function formatRupiah(amount) {
@@ -70,7 +70,7 @@ export default function AnalyticsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight" style={{ letterSpacing: '-1px' }}>
+          <h1 className="text-2xl font-heading font-bold tracking-tight" style={{ letterSpacing: '-1px' }}>
             Analisis
           </h1>
           <p className="text-ink-muted text-xs mt-1">Ringkasan keuangan Anda</p>
@@ -154,8 +154,8 @@ export default function AnalyticsPage() {
           className="bg-surface-1 rounded-[20px] p-4 border border-hairline-soft"
         >
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-violet/15 flex items-center justify-center">
-              <Hash size={16} className="text-gradient-violet" />
+            <div className="w-8 h-8 rounded-lg bg-accent-blue/15 flex items-center justify-center">
+              <Hash size={16} className="text-accent-blue" />
             </div>
           </div>
           <p className="text-xs text-ink-muted mb-1">Transaksi</p>
@@ -179,23 +179,23 @@ export default function AnalyticsPage() {
         <div className="h-52 w-full relative min-h-[208px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={monthly} barGap={2} barSize={12}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#262626" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
               <XAxis
                 dataKey="name"
-                tick={{ fontSize: 11, fill: '#999999' }}
+                tick={{ fontSize: 11, fill: '#64748b' }}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
-                tick={{ fontSize: 10, fill: '#999999' }}
+                tick={{ fontSize: 10, fill: '#64748b' }}
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={formatRupiah}
                 width={55}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="income" name="Pemasukan" fill="#22c55e" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="expense" name="Pengeluaran" fill="#ff5577" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="income" name="Pemasukan" fill="#1e9045" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="expense" name="Pengeluaran" fill="#ea3a3a" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -209,7 +209,7 @@ export default function AnalyticsPage() {
         className="bg-surface-1 rounded-[20px] p-5 border border-hairline-soft"
       >
         <h3 className="text-sm font-semibold text-ink mb-4 flex items-center gap-2">
-          <PieChartIcon size={16} className="text-gradient-magenta" />
+          <PieChartIcon size={16} className="text-accent-blue" />
           Pengeluaran per Kategori
         </h3>
         {categories.length === 0 ? (
@@ -237,11 +237,11 @@ export default function AnalyticsPage() {
                   <Tooltip
                     formatter={(value) => formatRupiahFull(value)}
                     contentStyle={{
-                      backgroundColor: '#1c1c1c',
-                      border: '1px solid #262626',
+                      backgroundColor: '#ffffff',
+                      border: '1px solid #e2e8f0',
                       borderRadius: '12px',
                       fontSize: '12px',
-                      color: '#ffffff',
+                      color: '#1e293b',
                     }}
                   />
                 </PieChart>

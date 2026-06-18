@@ -26,20 +26,20 @@ export default function BottomNav() {
               to={item.path}
               className="nav-item"
             >
-              {isActive && (
+              {/* {isActive && (
                 <motion.div
                   layoutId="nav-indicator"
                   className="nav-indicator"
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
-              )}
+              )} */}
               <Icon
                 size={22}
-                style={{ color: isActive ? '#0099ff' : '#999999', transition: 'color 0.2s' }}
+                style={{ color: isActive ? '#1890ff' : '#64748b', transition: 'color 0.2s' }}
               />
               <span
                 className="nav-label"
-                style={{ color: isActive ? '#0099ff' : '#999999' }}
+                style={{ color: isActive ? '#1890ff' : '#64748b' }}
               >
                 {item.label}
               </span>

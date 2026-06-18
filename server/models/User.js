@@ -20,6 +20,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Password harus diisi'],
     minlength: [6, 'Password minimal 6 karakter']
+  },
+  profilePicture: {
+    type: String, // Store Base64 string
+    default: ''
   }
 }, {
   timestamps: true
@@ -28,7 +32,7 @@ const userSchema = new mongoose.Schema({
 // Hash password before saving
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
-  const salt = await bcrypt.genSalt(10);
+  const salt = await bcrypt.genSalt(8);
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });

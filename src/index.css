@@ -1,25 +1,27 @@
 @import "tailwindcss";
 
-/* ===== DESIGN TOKENS (DESIGN.md) ===== */
 @theme {
-  --color-canvas: #090909;
-  --color-surface-1: #141414;
-  --color-surface-2: #1c1c1c;
-  --color-hairline: #262626;
-  --color-hairline-soft: #1a1a1a;
-  --color-ink: #ffffff;
-  --color-ink-muted: #999999;
-  --color-accent-blue: #0099ff;
-  --color-gradient-magenta: #d44df0;
-  --color-gradient-violet: #6a4cf5;
-  --color-gradient-orange: #ff7a3d;
-  --color-gradient-coral: #ff5577;
-  --color-success: #22c55e;
-  --color-danger: #ff5577;
-  --color-primary: #ffffff;
-  --color-on-primary: #000000;
+  --color-canvas: #F4F6F9;
+  --color-surface-1: #ffffff;
+  --color-surface-2: #f8fafc;
+  --color-hairline: #e2e8f0;
+  --color-hairline-soft: #f1f5f9;
+  --color-ink: #1e293b;
+  --color-ink-muted: #64748b;
+  --color-accent-blue: #1890ff;
+
+  --color-brand-blue-dark: #1155cc;
+  --color-brand-blue-light: #1890ff;
+  --color-brand-green-dark: #1e9045;
+  --color-brand-green-light: #63c737;
+
+  --color-success: #1e9045;
+  --color-danger: #ef4444;
+  --color-primary: #1890ff;
+  --color-on-primary: #ffffff;
 
   --font-family-inter: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-family-heading: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
 
   --radius-pill: 100px;
   --radius-xxl: 30px;
@@ -35,8 +37,8 @@
   }
 
   body {
-    background-color: #090909;
-    color: #ffffff;
+    background-color: #F4F6F9;
+    color: #1e293b;
     min-height: 100dvh;
     overflow-x: hidden;
   }
@@ -51,18 +53,18 @@
     border: none;
     outline: none;
   }
-  input::placeholder, textarea::placeholder { color: #999999; opacity: 0.6; }
+  input::placeholder, textarea::placeholder { color: #64748b; opacity: 0.6; }
   button { font-family: inherit; cursor: pointer; border: none; background: transparent; color: inherit; }
-  a { color: #0099ff; text-decoration: none; }
+  a { color: #1890ff; text-decoration: none; }
   a:hover { text-decoration: underline; }
 
   /* ===== SCROLLBAR ===== */
   ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: #090909; }
-  ::-webkit-scrollbar-thumb { background: #262626; border-radius: 9999px; }
+  ::-webkit-scrollbar-track { background: #F4F6F9; }
+  ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 9999px; }
 
   /* ===== CUSTOM DATE INPUT ===== */
-  input[type="date"] { color-scheme: dark; }
+  input[type="date"] { color-scheme: light; }
   input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 }
 
@@ -78,7 +80,7 @@
 /* ===== APP LAYOUT ===== */
 .app-root {
   min-height: 100dvh;
-  background: #090909;
+  background: #F4F6F9;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -109,10 +111,10 @@
   transform: translateX(-50%);
   width: 100%;
   max-width: 480px;
-  background: rgba(20,20,20,0.92);
+  background: rgba(255, 255, 255, 0.90);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border-top: 1px solid #1a1a1a;
+  border-top: 1px solid #e2e8f0;
   z-index: 50;
   padding: 0;
 }
@@ -146,7 +148,7 @@
   width: 20px;
   height: 2px;
   border-radius: 9999px;
-  background-color: #0099ff;
+  background-color: #1890ff;
 }
 
 .nav-label {
@@ -168,12 +170,12 @@
   width: 3.5rem;
   height: 3.5rem;
   border-radius: 9999px;
-  background: linear-gradient(135deg, #6a4cf5, #d44df0);
+  background: linear-gradient(135deg, #1155cc, #1890ff);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 25px rgba(106,76,245,0.4);
+  box-shadow: 0 8px 25px rgba(24, 144, 255, 0.25);
   z-index: 40;
   cursor: pointer;
   border: none;
@@ -193,14 +195,14 @@
 
 @media (min-width: 480px) {
   .app-main {
-    border-left: 1px solid #1a1a1a;
-    border-right: 1px solid #1a1a1a;
-    background: #090909;
-    box-shadow: 0 0 80px rgba(0, 0, 0, 0.6);
+    border-left: 1px solid #e2e8f0;
+    border-right: 1px solid #e2e8f0;
+    background: #F4F6F9;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.05);
   }
   .bottom-nav {
-    border-left: 1px solid #1a1a1a;
-    border-right: 1px solid #1a1a1a;
+    border-left: 1px solid #e2e8f0;
+    border-right: 1px solid #e2e8f0;
   }
 }
 
@@ -215,8 +217,8 @@
 .loading-spinner {
   width: 32px;
   height: 32px;
-  border: 2px solid #999999;
-  border-top-color: #0099ff;
+  border: 2px solid #e2e8f0;
+  border-top-color: #1890ff;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -231,9 +233,9 @@
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.65);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(15, 23, 42, 0.3);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   z-index: 60;
   display: flex;
   align-items: flex-end;
@@ -250,9 +252,9 @@
 .modal-sheet {
   width: 100%;
   max-width: 480px;
-  background: #141414;
+  background: #ffffff;
   border-radius: 28px 28px 0 0;
-  border: 1px solid #1a1a1a;
+  border: 1px solid #e2e8f0;
   border-bottom: none;
   max-height: 90dvh;
   overflow-y: auto;
@@ -262,7 +264,7 @@
 @media (min-width: 480px) {
   .modal-sheet {
     border-radius: 28px;
-    border-bottom: 1px solid #1a1a1a;
+    border-bottom: 1px solid #e2e8f0;
     max-height: 85dvh;
   }
 }
@@ -273,13 +275,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #090909;
+  background: #F4F6F9;
 }
 .splash-logo {
   width: 48px;
   height: 48px;
   border-radius: 16px;
-  background: linear-gradient(135deg, #6a4cf5, #d44df0);
+  background: linear-gradient(135deg, #1155cc, #1890ff);
   display: flex;
   align-items: center;
   justify-content: center;

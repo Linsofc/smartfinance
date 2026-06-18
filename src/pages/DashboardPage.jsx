@@ -95,20 +95,21 @@ export default function DashboardPage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 0' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
               <div className="loading-spinner" />
-              <p style={{ color: '#999999', fontSize: '12px' }}>Memuat transaksi...</p>
+              <p style={{ color: '#64748b', fontSize: '12px' }}>Memuat transaksi...</p>
             </div>
           </div>
         ) : groupedTransactions.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 16px' }}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifycontent: 'center', padding: '60px 16px' }}
           >
             <div style={{
               width: '80px',
               height: '80px',
               borderRadius: '24px',
-              backgroundColor: '#141414',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #e2e8f0',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -117,10 +118,10 @@ export default function DashboardPage() {
             }}>
               📭
             </div>
-            <p style={{ color: '#999999', fontSize: '14px', textAlign: 'center' }}>
+            <p style={{ color: '#64748b', fontSize: '14px', textAlign: 'center' }}>
               Belum ada transaksi bulan ini
             </p>
-            <p style={{ color: 'rgba(153,153,153,0.6)', fontSize: '12px', textAlign: 'center', marginTop: '4px' }}>
+            <p style={{ color: 'rgba(100,116,139,0.6)', fontSize: '12px', textAlign: 'center', marginTop: '4px' }}>
               Tap tombol + untuk menambah transaksi pertama
             </p>
           </motion.div>

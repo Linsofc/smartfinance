@@ -15,11 +15,13 @@ const WalletPage = lazy(() => import('./pages/WalletPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const BudgetPage = lazy(() => import('./pages/BudgetPage'));
 const BudgetSettingsPage = lazy(() => import('./pages/BudgetSettingsPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const SecurityPage = lazy(() => import('./pages/SecurityPage'));
 
 // A minimal fallback loader
 const PageLoader = () => (
   <div className="flex-1 flex items-center justify-center min-h-screen bg-canvas">
-    <div className="w-8 h-8 border-2 border-ink-muted border-t-accent-blue rounded-full animate-spin" />
+    <div className="w-8 h-8 border-2 border-slate-200 border-t-accent-blue rounded-full animate-spin" />
   </div>
 );
 
@@ -30,10 +32,8 @@ export default function App() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-canvas">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-[16px] bg-gradient-to-br from-gradient-violet to-gradient-magenta flex items-center justify-center animate-pulse">
-            <span className="text-lg font-bold text-white">S</span>
-          </div>
-          <div className="w-8 h-8 border-2 border-ink-muted border-t-accent-blue rounded-full animate-spin" />
+          <img src="/circle.png" alt="Logo" className="w-12 h-12 object-contain animate-pulse" />
+          <div className="w-8 h-8 border-2 border-slate-200 border-t-accent-blue rounded-full animate-spin" />
         </div>
       </div>
     );
@@ -66,6 +66,8 @@ export default function App() {
           <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/wallet" element={<WalletPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/settings/profile" element={<ProfilePage />} />
+          <Route path="/settings/security" element={<SecurityPage />} />
         </Route>
 
         {/* Catch all */}

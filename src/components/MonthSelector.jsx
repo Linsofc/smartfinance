@@ -12,7 +12,7 @@ export default function MonthSelector({ month, year, onPrev, onNext }) {
       <motion.button
         whileTap={{ scale: 0.85 }}
         onClick={onPrev}
-        className="w-10 h-10 rounded-full bg-surface-1 flex items-center justify-center text-ink hover:bg-surface-2 transition-colors"
+        className="w-10 h-10 rounded-full bg-surface-1 flex items-center justify-center text-ink border border-hairline hover:bg-surface-2 transition-colors"
         aria-label="Bulan sebelumnya"
       >
         <ChevronLeft size={20} />
@@ -22,7 +22,7 @@ export default function MonthSelector({ month, year, onPrev, onNext }) {
         key={`${month}-${year}`}
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-lg font-semibold tracking-tight text-ink"
+        className="text-lg font-heading font-semibold tracking-tight text-ink"
       >
         {MONTH_NAMES[month - 1]} {year}
       </motion.h2>
@@ -30,7 +30,7 @@ export default function MonthSelector({ month, year, onPrev, onNext }) {
       <motion.button
         whileTap={{ scale: 0.85 }}
         onClick={onNext}
-        className="w-10 h-10 rounded-full bg-surface-1 flex items-center justify-center text-ink hover:bg-surface-2 transition-colors"
+        className="w-10 h-10 rounded-full bg-surface-1 flex items-center justify-center text-ink border border-hairline hover:bg-surface-2 transition-colors"
         aria-label="Bulan berikutnya"
       >
         <ChevronRight size={20} />

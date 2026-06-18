@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { UserPlus, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { GoogleLogin } from '@react-oauth/google';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -12,8 +13,12 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+
+  const isGoogleConfigured = import.meta.env.VITE_GOOGLE_CLIENT_ID && 
+    import.meta.env.VITE_GOOGLE_CLIENT_ID !== 'masukkan_client_id_google_anda_disini' && 
+    import.meta.env.VITE_GOOGLE_CLIENT_ID !== 'placeholder';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,8 +48,8 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-canvas flex flex-col items-center justify-center px-6 relative overflow-hidden">
       {/* Background gradient orbs */}
-      <div className="absolute top-[-15%] left-[-20%] w-[500px] h-[500px] rounded-full bg-gradient-orange/10 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-15%] right-[-20%] w-[400px] h-[400px] rounded-full bg-gradient-violet/10 blur-[120px] pointer-events-none" />
+      <div className="absolute top-[-15%] left-[-20%] w-[500px] h-[500px] rounded-full bg-brand-blue-light/5 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-15%] right-[-20%] w-[400px] h-[400px] rounded-full bg-brand-green-light/5 blur-[120px] pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -54,15 +59,15 @@ export default function RegisterPage() {
       >
         {/* Logo & Title */}
         <div className="text-center mb-8">
-          <motion.div
+          <motion.img
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
-            className="w-16 h-16 rounded-[20px] bg-gradient-to-br from-gradient-orange to-gradient-coral flex items-center justify-center mx-auto mb-5 shadow-lg shadow-gradient-orange/20"
-          >
-            <span className="text-2xl font-bold text-white">S</span>
-          </motion.div>
-          <h1 className="text-3xl font-bold tracking-tight text-ink mb-2" style={{ letterSpacing: '-1.5px' }}>
+            src="/circle.png"
+            alt="SmartFinance Logo"
+            className="w-20 h-20 object-contain mx-auto mb-4"
+          />
+          <h1 className="text-3xl font-heading font-bold tracking-tight text-ink mb-2" style={{ letterSpacing: '-1px' }}>
             Buat Akun
           </h1>
           <p className="text-ink-muted text-sm">
@@ -163,6 +168,50 @@ export default function RegisterPage() {
             )}
           </motion.button>
         </form>
+
+        {/* Google Login */}
+        <div className="mt-6 flex flex-col items-center">
+          <div className="flex items-center w-full gap-4 mb-6">
+            <div className="h-px bg-hairline-soft flex-1" />
+            <span className="text-xs font-medium text-ink-muted">ATAU</span>
+            <div className="h-px bg-hairline-soft flex-1" />
+          </div>
+          
+          <div className="w-full flex justify-center">
+            {isGoogleConfigured ? (
+              <GoogleLogin
+                onSuccess={async (credentialResponse) => {
+                  try {
+                    setLoading(true);
+                    await loginWithGoogle(credentialResponse.credential);
+                    navigate('/', { replace: true });
+                  } catch (err) {
+                    setError(err.response?.data?.message || 'Registrasi Google gagal.');
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                onError={() => {
+                  setError('Registrasi Google gagal.');
+                }}
+                theme="outline"
+                size="large"
+                text="continue_with"
+                width="340"
+              />
+            ) : (
+              <div className="w-full max-w-[340px] p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-3">
+                <AlertTriangle size={18} className="text-amber-500 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-[11px] font-semibold text-amber-500">Google Register Nonaktif</p>
+                  <p className="text-[10px] text-ink-muted mt-0.5 leading-relaxed">
+                    Client ID Google belum dikonfigurasi di file <code>.env</code>.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Login Link */}
         <motion.p

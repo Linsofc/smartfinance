@@ -95,14 +95,15 @@ export default function BudgetPage() {
         <h1 style={{ 
           fontSize: '24px', 
           fontWeight: 700, 
-          color: '#ffffff', 
+          color: '#1e293b', 
+          fontFamily: 'Outfit, sans-serif',
           letterSpacing: '-0.5px',
           margin: 0
         }}>Anggaran</h1>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button onClick={() => changeMonth(-1)} style={{ 
-            color: '#ffffff', 
+            color: '#1e293b', 
             background: 'none', 
             border: 'none',
             padding: '4px',
@@ -113,8 +114,8 @@ export default function BudgetPage() {
             <ChevronLeft size={20} />
           </button>
           <span style={{ 
-            color: '#ffffff', 
-            fontWeight: 500, 
+            color: '#1e293b', 
+            fontWeight: 600, 
             fontSize: '13px', 
             width: '100px', 
             textAlign: 'center' 
@@ -122,7 +123,7 @@ export default function BudgetPage() {
             {getMonthName(currentDate)}
           </span>
           <button onClick={() => changeMonth(1)} style={{ 
-            color: '#ffffff', 
+            color: '#1e293b', 
             background: 'none', 
             border: 'none',
             padding: '4px',
@@ -143,9 +144,9 @@ export default function BudgetPage() {
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: '50%',
-            backgroundColor: '#1c1c1c',
-            color: '#ffffff',
-            border: 'none',
+            backgroundColor: '#ffffff',
+            color: '#1e293b',
+            border: '1px solid #e2e8f0',
             cursor: 'pointer'
           }}
         >
@@ -165,11 +166,11 @@ export default function BudgetPage() {
         >
           {/* Main Budget Card */}
           <div style={{
-            background: 'linear-gradient(135deg, #6b7cff, #5b6cee)',
+            background: 'linear-gradient(135deg, #1155cc, #1890ff)',
             borderRadius: '24px',
             padding: '24px',
             marginBottom: '8px',
-            boxShadow: '0 8px 32px rgba(107, 124, 255, 0.2)'
+            boxShadow: '0 8px 32px rgba(24, 144, 255, 0.15)'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '20px' }}>
               <div>
@@ -198,14 +199,14 @@ export default function BudgetPage() {
             <div style={{ 
               textAlign: 'center', 
               padding: '40px 24px', 
-              backgroundColor: '#141414', 
+              backgroundColor: '#ffffff', 
               borderRadius: '24px', 
-              border: '1px solid #1a1a1a',
+              border: '1px solid #e2e8f0',
               marginTop: '12px' 
             }}>
               <div style={{ fontSize: '32px', marginBottom: '12px' }}>🎯</div>
-              <h3 style={{ color: '#ffffff', fontWeight: 500, marginBottom: '4px', fontSize: '15px' }}>Belum Ada Anggaran</h3>
-              <p style={{ color: '#999999', fontSize: '13px' }}>Tekan tombol pengaturan (⚙️) di sudut kanan atas untuk mulai membuat anggaran Anda.</p>
+              <h3 style={{ color: '#1e293b', fontWeight: 600, marginBottom: '4px', fontSize: '15px' }}>Belum Ada Anggaran</h3>
+              <p style={{ color: '#64748b', fontSize: '13px' }}>Tekan tombol pengaturan (⚙️) di sudut kanan atas untuk mulai membuat anggaran Anda.</p>
             </div>
           ) : (
             budgets.map((budget) => {
@@ -213,23 +214,23 @@ export default function BudgetPage() {
               const progressRaw = (spent / budget.amount) * 100;
               const progress = Math.min(progressRaw, 100);
               
-              let barColor = '#22c55e'; // Green
-              if (progressRaw >= 100) barColor = '#ff5577'; // Red
+              let barColor = '#1e9045'; // Green
+              if (progressRaw >= 100) barColor = '#ef4444'; // Red
               else if (progressRaw >= 80) barColor = '#f59e0b'; // Yellow
 
               return (
                 <div key={budget._id} style={{
-                  backgroundColor: '#1c1c1f',
+                  backgroundColor: '#ffffff',
                   borderRadius: '24px',
                   padding: '20px',
-                  border: '1px solid #2c2c2e'
+                  border: '1px solid #e2e8f0'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
                     <div style={{
                       width: '48px',
                       height: '48px',
                       borderRadius: '50%',
-                      backgroundColor: '#2c2c2e',
+                      backgroundColor: '#f1f5f9',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -241,14 +242,14 @@ export default function BudgetPage() {
                     
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '4px' }}>
-                        <h3 style={{ color: '#ffffff', fontWeight: 500, fontSize: '15px', margin: 0 }}>{budget.category}</h3>
-                        <p style={{ color: '#8e8e93', fontSize: '11px', fontWeight: 500, fontFamily: 'monospace', margin: 0 }}>
+                        <h3 style={{ color: '#1e293b', fontWeight: 600, fontSize: '15px', margin: 0 }}>{budget.category}</h3>
+                        <p style={{ color: '#64748b', fontSize: '11px', fontWeight: 600, fontFamily: 'monospace', margin: 0 }}>
                           {formatCurrency(spent)} / {formatCurrency(budget.amount)}
                         </p>
                       </div>
                       
                       {/* Category Progress Bar */}
-                      <div style={{ height: '10px', backgroundColor: '#2c2c2e', borderRadius: '9999px', overflow: 'hidden', marginTop: '6px', width: '100%' }}>
+                      <div style={{ height: '10px', backgroundColor: '#f1f5f9', borderRadius: '9999px', overflow: 'hidden', marginTop: '6px', width: '100%' }}>
                         <motion.div 
                           style={{ height: '100%', borderRadius: '9999px', backgroundColor: barColor }}
                           initial={{ width: 0 }}
