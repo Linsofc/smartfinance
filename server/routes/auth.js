@@ -11,6 +11,7 @@ import nodemailer from 'nodemailer';
 import Otp from '../models/Otp.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { sendTelegramNotification } from '../utils/telegram.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -179,6 +180,15 @@ router.post('/register/verify', async (req, res) => {
     });
     await user.save();
 
+    // Send Telegram Notification to Owner
+    const localDate = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+    const notificationMessage = `🎉 <b>Pendaftaran Pengguna Baru!</b>\n\n` +
+      `SmartFinance telah menerima registrasi pengguna baru:\n` +
+      `👤 <b>Nama:</b> ${user.name}\n` +
+      `✉️ <b>Email:</b> ${user.email}\n` +
+      `📅 <b>Waktu:</b> ${localDate}`;
+    sendTelegramNotification(notificationMessage);
+
     // Clean up used OTP
     await Otp.deleteMany({ email });
 
@@ -230,6 +240,7 @@ router.post('/login', async (req, res) => {
       user: user.toJSON()
     });
   } catch (error) {
+    console.error('Login Error:', error);
     res.status(500).json({ message: 'Server error.' });
   }
 });
@@ -239,6 +250,7 @@ router.get('/me', auth, async (req, res) => {
   try {
     res.json({ user: req.user.toJSON() });
   } catch (error) {
+    console.error('Me Auth Error:', error);
     res.status(500).json({ message: 'Server error.' });
   }
 });
@@ -289,6 +301,7 @@ router.put('/profile', auth, async (req, res) => {
       user: user.toJSON()
     });
   } catch (error) {
+    console.error('Update Profile Error:', error);
     res.status(500).json({ message: 'Gagal memperbarui profil.' });
   }
 });
@@ -358,6 +371,15 @@ router.post('/google', async (req, res) => {
         profilePicture: picture
       });
       await user.save();
+
+      // Send Telegram Notification for Google Sign-up
+      const localDate = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+      const notificationMessage = `🎉 <b>Pendaftaran Pengguna Baru (Google)!</b>\n\n` +
+        `SmartFinance telah menerima registrasi pengguna baru via Google:\n` +
+        `👤 <b>Nama:</b> ${user.name}\n` +
+        `✉️ <b>Email:</b> ${user.email}\n` +
+        `📅 <b>Waktu:</b> ${localDate}`;
+      sendTelegramNotification(notificationMessage);
     } else if (picture && !user.profilePicture) {
       user.profilePicture = picture;
       await user.save();
