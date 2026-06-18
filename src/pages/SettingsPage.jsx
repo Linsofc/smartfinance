@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, LogOut, Info, Shield, ChevronRight, Database, Trash2, Download, Upload, FileJson, Check, AlertTriangle, X } from 'lucide-react';
+import { User, LogOut, Info, Shield, ChevronRight, Database, Trash2, Download, Upload, FileJson, Check, AlertTriangle, X, RefreshCcw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
@@ -14,6 +14,9 @@ export default function SettingsPage() {
   const [resetting, setResetting] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [importModal, setImportModal] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [confirmDeleteText, setConfirmDeleteText] = useState('');
   const [importPreview, setImportPreview] = useState(null);
   const [importFile, setImportFile] = useState(null);
   const [clearExisting, setClearExisting] = useState(false);
@@ -61,6 +64,31 @@ export default function SettingsPage() {
       alert(err.response?.data?.message || 'Gagal menghapus data.');
     } finally {
       setResetting(false);
+    }
+  };
+
+  const openDeleteModal = () => {
+    setDeleteModal(true);
+    setConfirmDeleteText('');
+  };
+
+  const handleDeleteAccount = async () => {
+    if (confirmDeleteText !== 'HAPUS AKUN') {
+      return;
+    }
+
+    setDeletingAccount(true);
+    try {
+      const res = await api.delete('/auth/account');
+      alert(res.data.message);
+      clearAllCache();
+      logout();
+      navigate('/login', { replace: true });
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus akun.');
+    } finally {
+      setDeletingAccount(false);
+      setDeleteModal(false);
     }
   };
 
@@ -248,19 +276,6 @@ export default function SettingsPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-surface-1 rounded-[20px] border border-hairline-soft overflow-hidden"
-        >
-          <MenuItem
-            icon={<Info size={18} />}
-            label="Tentang Aplikasi"
-            sublabel="SmartFinance v1.0.0"
-          />
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
           className="bg-surface-1 rounded-[20px] border border-hairline-soft overflow-hidden"
         >
@@ -270,7 +285,7 @@ export default function SettingsPage() {
             className="w-full p-4 flex items-center gap-3 hover:bg-danger/5 transition-colors text-left"
           >
             <div className="w-9 h-9 rounded-xl bg-danger/15 flex items-center justify-center text-danger shrink-0">
-              <Trash2 size={18} />
+              <RefreshCcw size={18} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-danger">Reset Semua Data</p>
@@ -280,6 +295,37 @@ export default function SettingsPage() {
             </div>
             <ChevronRight size={16} className="text-ink-muted/50 shrink-0" />
           </button>
+
+          <div className="h-px bg-hairline-soft mx-4" />
+
+          <button
+            onClick={openDeleteModal}
+            className="w-full p-4 flex items-center gap-3 hover:bg-danger/5 transition-colors text-left"
+          >
+            <div className="w-9 h-9 rounded-xl bg-danger/15 flex items-center justify-center text-danger shrink-0">
+              <Trash2 size={18} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-danger">Hapus Akun Permanen</p>
+              <p className="text-xs text-ink-muted truncate mt-0.5">
+                Hapus akun Anda beserta seluruh data secara permanen
+              </p>
+            </div>
+            <ChevronRight size={16} className="text-ink-muted/50 shrink-0" />
+          </button>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-surface-1 rounded-[20px] border border-hairline-soft overflow-hidden"
+        >
+          <MenuItem
+            icon={<Info size={18} />}
+            label="Tentang Aplikasi"
+            sublabel="SmartFinance v1.4.0"
+          />
         </motion.div>
 
         {/* Logout Button */}
@@ -301,15 +347,13 @@ export default function SettingsPage() {
         </motion.div>
       </div>
 
-      {/* Footer */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
         className="text-center pt-6 pb-4"
       >
-        <p className="text-ink-muted/40 text-xs">SmartFinance v1.0.0</p>
-        <p className="text-ink-muted/30 text-[10px] mt-1">UAS Project — PSBF 2026</p>
+        <p className="text-ink-muted/30 text-[10px] mt-1">Linsofc | Smart Finance | © 2026</p>
       </motion.div>
 
       {/* ═══════════ Import Modal ═══════════ */}
@@ -499,6 +543,88 @@ export default function SettingsPage() {
                     )}
                   </>
                 )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ═══════════ Delete Account Modal ═══════════ */}
+      <AnimatePresence>
+        {deleteModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)' }}
+            onClick={(e) => { if (e.target === e.currentTarget) setDeleteModal(false); }}
+          >
+            <motion.div
+              initial={{ y: 80, opacity: 0, scale: 0.95 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 80, opacity: 0, scale: 0.95 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+              className="w-full max-w-md mx-4 mb-4 sm:mb-0 rounded-[24px] border border-hairline-soft overflow-hidden"
+              style={{ background: 'var(--surface-1)' }}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-5 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-danger/15 flex items-center justify-center text-danger shrink-0">
+                    <AlertTriangle size={20} className="animate-pulse" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-semibold text-danger">Hapus Akun Permanen</h2>
+                    <p className="text-[11px] text-ink-muted mt-0.5">Tindakan ini tidak dapat dibatalkan</p>
+                  </div>
+                </div>
+                <button onClick={() => setDeleteModal(false)} className="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center hover:bg-surface-2/80 transition-colors">
+                  <X size={16} className="text-ink-muted" />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="px-5 pb-5 space-y-4">
+                <div className="rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.08)' }}>
+                  <p className="text-xs text-danger/90 leading-relaxed">
+                    Menghapus akun akan menghapus profil Anda beserta <strong>seluruh data transaksi, dompet, transfer, dan anggaran</strong> secara permanen. Anda tidak akan bisa memulihkan data ini atau login kembali.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs text-ink-muted">
+                    Ketik kata <strong className="text-danger font-semibold">HAPUS AKUN</strong> di bawah untuk mengonfirmasi:
+                  </p>
+                  <input
+                    type="text"
+                    value={confirmDeleteText}
+                    onChange={(e) => setConfirmDeleteText(e.target.value)}
+                    placeholder="HAPUS AKUN"
+                    className="w-full px-4 py-3 rounded-xl border border-hairline-soft bg-surface-2 text-ink text-sm font-medium focus:outline-none focus:border-danger transition-colors placeholder:text-ink-muted/30"
+                  />
+                </div>
+
+                {/* Confirm / Cancel Actions */}
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setDeleteModal(false)}
+                    className="flex-1 py-3 rounded-xl text-sm font-semibold bg-surface-2 text-ink hover:bg-surface-3 transition-colors active:scale-[0.98]"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={deletingAccount || confirmDeleteText !== 'HAPUS AKUN'}
+                    className={`flex-1 py-3 rounded-xl text-sm font-semibold text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${confirmDeleteText === 'HAPUS AKUN' ? 'bg-danger hover:bg-danger-hover cursor-pointer shadow-lg shadow-danger/20' : 'bg-surface-3 text-ink-muted/50 cursor-not-allowed'}`}
+                  >
+                    {deletingAccount ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      'Hapus Akun'
+                    )}
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>

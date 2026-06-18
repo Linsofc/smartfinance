@@ -47,6 +47,11 @@ export function AuthProvider({ children }) {
 
   const register = async (name, email, password) => {
     const res = await api.post('/auth/register', { name, email, password });
+    return res.data;
+  };
+
+  const verifyRegister = async (email, otp) => {
+    const res = await api.post('/auth/register/verify', { email, otp });
     const { token: newToken, user: newUser } = res.data;
     setToken(newToken);
     setUser(newUser);
@@ -86,7 +91,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, loginWithGoogle, register, logout, updateProfile, updateSecurity, isAuthenticated: !!token }}>
+    <AuthContext.Provider value={{ user, token, loading, login, loginWithGoogle, register, verifyRegister, logout, updateProfile, updateSecurity, isAuthenticated: !!token }}>
       {children}
     </AuthContext.Provider>
   );
