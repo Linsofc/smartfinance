@@ -17,6 +17,7 @@ const BudgetPage = lazy(() => import('./pages/BudgetPage'));
 const BudgetSettingsPage = lazy(() => import('./pages/BudgetSettingsPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const SecurityPage = lazy(() => import('./pages/SecurityPage'));
+const ApiSettingsPage = lazy(() => import('./pages/ApiSettingsPage'));
 
 // A minimal fallback loader
 const PageLoader = () => (
@@ -68,6 +69,7 @@ export default function App() {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/settings/profile" element={<ProfilePage />} />
           <Route path="/settings/security" element={<SecurityPage />} />
+          <Route path="/settings/api" element={<ApiSettingsPage />} />
         </Route>
 
         {/* Catch all */}

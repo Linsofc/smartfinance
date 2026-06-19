@@ -4,6 +4,7 @@ import { ArrowLeft, Plus, Trash2, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDataCache } from '../context/DataCacheContext';
 import { useAuth } from '../context/AuthContext';
+import Swal from 'sweetalert2';
 
 const EXPENSE_CATEGORIES = [
   { name: 'Makanan', icon: '🍲', color: '#ff7a3d20' },
@@ -161,27 +162,70 @@ export default function BudgetSettingsPage() {
       fetchBudgets(true); // silent refresh in background
     } catch (error) {
       console.error('Failed to save budget:', error);
-      alert('Gagal menyimpan anggaran');
+      Swal.fire({
+        title: 'Gagal!',
+        text: 'Gagal menyimpan anggaran.',
+        icon: 'error',
+        background: 'var(--color-surface-1)',
+        color: 'var(--color-ink)',
+        customClass: {
+          popup: 'rounded-[24px] border border-hairline bg-surface-1 text-ink p-6',
+          title: 'text-lg font-bold text-ink',
+          confirmButton: 'px-5 py-2.5 rounded-xl text-sm font-semibold bg-danger text-white'
+        },
+        buttonsStyling: false
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Hapus anggaran ini?')) return;
-    
-    const previousBudgets = [...budgets];
-    // Optimistic UI update - delete immediately in view
-    setBudgets(prev => prev.filter(b => b._id !== id));
-    
-    try {
-      await cache.deleteBudget(id);
-      fetchBudgets(true); // silent refresh in background
-    } catch (error) {
-      console.error('Failed to delete budget:', error);
-      setBudgets(previousBudgets); // revert on error
-      alert('Gagal menghapus anggaran');
-    }
+    Swal.fire({
+      title: 'Hapus Anggaran?',
+      text: 'Apakah Anda yakin ingin menghapus anggaran ini?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Ya, Hapus',
+      cancelButtonText: 'Batal',
+      background: 'var(--color-surface-1)',
+      color: 'var(--color-ink)',
+      customClass: {
+        popup: 'rounded-[24px] border border-hairline bg-surface-1 text-ink p-6',
+        title: 'text-lg font-bold text-ink',
+        htmlContainer: 'text-sm text-ink-muted mt-2',
+        confirmButton: 'px-5 py-2.5 rounded-xl text-sm font-semibold bg-danger text-white transition-all active:scale-[0.98]',
+        cancelButton: 'px-5 py-2.5 rounded-xl text-sm font-semibold bg-surface-2 border border-hairline text-ink transition-all active:scale-[0.98]'
+      },
+      buttonsStyling: false
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        const previousBudgets = [...budgets];
+        // Optimistic UI update - delete immediately in view
+        setBudgets(prev => prev.filter(b => b._id !== id));
+        
+        try {
+          await cache.deleteBudget(id);
+          fetchBudgets(true); // silent refresh in background
+        } catch (error) {
+          console.error('Failed to delete budget:', error);
+          setBudgets(previousBudgets); // revert on error
+          Swal.fire({
+            title: 'Gagal!',
+            text: 'Gagal menghapus anggaran.',
+            icon: 'error',
+            background: 'var(--color-surface-1)',
+            color: 'var(--color-ink)',
+            customClass: {
+              popup: 'rounded-[24px] border border-hairline bg-surface-1 text-ink p-6',
+              title: 'text-lg font-bold text-ink',
+              confirmButton: 'px-5 py-2.5 rounded-xl text-sm font-semibold bg-danger text-white'
+            },
+            buttonsStyling: false
+          });
+        }
+      }
+    });
   };
 
   return (

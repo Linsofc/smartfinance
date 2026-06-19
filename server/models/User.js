@@ -57,6 +57,13 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 userSchema.methods.toJSON = function() {
   const obj = this.toObject();
   delete obj.password;
+  
+  // Deteksi status premium secara dinamis berdasarkan email
+  const premiumEmails = process.env.AKUN_PREM
+    ? process.env.AKUN_PREM.split(',').map(e => e.trim().toLowerCase())
+    : [];
+  obj.isPremium = premiumEmails.includes(obj.email?.toLowerCase());
+  
   return obj;
 };
 

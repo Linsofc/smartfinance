@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Camera, ChevronLeft, User, Mail, Save, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import Swal from 'sweetalert2';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -50,7 +51,19 @@ export default function ProfilePage() {
     setLoading(true);
     try {
       await updateProfile({ name, email, profilePicture });
-      alert('Profil berhasil diperbarui!');
+      await Swal.fire({
+        title: 'Berhasil!',
+        text: 'Profil Anda berhasil diperbarui.',
+        icon: 'success',
+        background: 'var(--color-surface-1)',
+        color: 'var(--color-ink)',
+        customClass: {
+          popup: 'rounded-[24px] border border-hairline bg-surface-1 text-ink p-6',
+          title: 'text-lg font-bold text-ink',
+          confirmButton: 'px-5 py-2.5 rounded-xl text-sm font-semibold bg-primary text-white'
+        },
+        buttonsStyling: false
+      });
       navigate('/settings');
     } catch (err) {
       setError(err.response?.data?.message || 'Gagal memperbarui profil.');

@@ -8,6 +8,7 @@ import walletRoutes from './routes/wallets.js';
 import budgetRoutes from './routes/budgets.js';
 import transferRoutes from './routes/transfers.js';
 import dataRoutes from './routes/data.js';
+import aiRoutes from './routes/ai.js';
 
 dotenv.config();
 
@@ -40,6 +41,7 @@ app.use('/api/wallets', walletRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/transfers', transferRoutes);
 app.use('/api/data', dataRoutes);
+app.use('/api/v1/ai', aiRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

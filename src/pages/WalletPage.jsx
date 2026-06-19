@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useDataCache } from '../context/DataCacheContext';
 import WALLET_LOGOS, { WalletLogo, LogoBadge } from '../components/WalletLogos';
+import Swal from 'sweetalert2';
 
 const WALLET_ICONS = {
   wallet: WalletIcon,
@@ -130,13 +131,46 @@ export default function WalletPage() {
 
   // Handle Wallet Delete
   const handleDelete = async (id) => {
-    if (!confirm('Hapus dompet ini? Semua data terkait saldo akan ikut terhapus.')) return;
-    try {
-      await cache.deleteWallet(id);
-      await fetchWallets({ force: true });
-    } catch (error) {
-      console.error('Error deleting wallet:', error);
-    }
+    Swal.fire({
+      title: 'Hapus Dompet?',
+      text: 'Semua data terkait saldo akan ikut terhapus secara permanen.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Ya, Hapus',
+      cancelButtonText: 'Batal',
+      background: 'var(--color-surface-1)',
+      color: 'var(--color-ink)',
+      customClass: {
+        popup: 'rounded-[24px] border border-hairline bg-surface-1 text-ink p-6',
+        title: 'text-lg font-bold text-ink',
+        htmlContainer: 'text-sm text-ink-muted mt-2',
+        confirmButton: 'px-5 py-2.5 rounded-xl text-sm font-semibold bg-danger text-white transition-all active:scale-[0.98]',
+        cancelButton: 'px-5 py-2.5 rounded-xl text-sm font-semibold bg-surface-2 border border-hairline text-ink transition-all active:scale-[0.98]'
+      },
+      buttonsStyling: false
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await cache.deleteWallet(id);
+          await fetchWallets({ force: true });
+        } catch (error) {
+          console.error('Error deleting wallet:', error);
+          Swal.fire({
+            title: 'Gagal!',
+            text: 'Gagal menghapus dompet.',
+            icon: 'error',
+            background: 'var(--color-surface-1)',
+            color: 'var(--color-ink)',
+            customClass: {
+              popup: 'rounded-[24px] border border-hairline bg-surface-1 text-ink p-6',
+              title: 'text-lg font-bold text-ink',
+              confirmButton: 'px-5 py-2.5 rounded-xl text-sm font-semibold bg-danger text-white'
+            },
+            buttonsStyling: false
+          });
+        }
+      }
+    });
   };
 
   // Handle Transfer execution
@@ -156,7 +190,25 @@ export default function WalletPage() {
 
     const sourceWallet = wallets.find(w => w._id === fromWalletId);
     if (sourceWallet && sourceWallet.balance < Number(amount)) {
-      if (!confirm('Saldo dompet asal tidak mencukupi. Lanjutkan transfer?')) {
+      const confirmResult = await Swal.fire({
+        title: 'Saldo Tidak Mencukupi',
+        text: 'Saldo dompet asal tidak mencukupi. Lanjutkan transfer?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Lanjutkan',
+        cancelButtonText: 'Batal',
+        background: 'var(--color-surface-1)',
+        color: 'var(--color-ink)',
+        customClass: {
+          popup: 'rounded-[24px] border border-hairline bg-surface-1 text-ink p-6',
+          title: 'text-lg font-bold text-ink',
+          htmlContainer: 'text-sm text-ink-muted mt-2',
+          confirmButton: 'px-5 py-2.5 rounded-xl text-sm font-semibold bg-primary text-white transition-all active:scale-[0.98]',
+          cancelButton: 'px-5 py-2.5 rounded-xl text-sm font-semibold bg-surface-2 border border-hairline text-ink transition-all active:scale-[0.98]'
+        },
+        buttonsStyling: false
+      });
+      if (!confirmResult.isConfirmed) {
         return;
       }
     }
@@ -247,12 +299,23 @@ export default function WalletPage() {
             <Receipt size={18} />
           </motion.button>
           
-          {/* Transfer Execution Button */}
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => {
               if (wallets.length < 2) {
-                alert('Anda membutuhkan minimal 2 dompet untuk melakukan transfer.');
+                Swal.fire({
+                  title: 'Transfer Gagal',
+                  text: 'Anda membutuhkan minimal 2 dompet untuk melakukan transfer.',
+                  icon: 'info',
+                  background: 'var(--color-surface-1)',
+                  color: 'var(--color-ink)',
+                  customClass: {
+                    popup: 'rounded-[24px] border border-hairline bg-surface-1 text-ink p-6',
+                    title: 'text-lg font-bold text-ink',
+                    confirmButton: 'px-5 py-2.5 rounded-xl text-sm font-semibold bg-primary text-white'
+                  },
+                  buttonsStyling: false
+                });
                 return;
               }
               setShowTransferModal(true);
@@ -537,7 +600,19 @@ export default function WalletPage() {
                       const file = e.target.files[0];
                       if (!file) return;
                       if (file.size > 2 * 1024 * 1024) {
-                        alert('Ukuran file maks 2MB.');
+                        Swal.fire({
+                          title: 'File Terlalu Besar',
+                          text: 'Ukuran file maksimal adalah 2MB.',
+                          icon: 'warning',
+                          background: 'var(--color-surface-1)',
+                          color: 'var(--color-ink)',
+                          customClass: {
+                            popup: 'rounded-[24px] border border-hairline bg-surface-1 text-ink p-6',
+                            title: 'text-lg font-bold text-ink',
+                            confirmButton: 'px-5 py-2.5 rounded-xl text-sm font-semibold bg-primary text-white'
+                          },
+                          buttonsStyling: false
+                        });
                         return;
                       }
                       const reader = new FileReader();
