@@ -9,6 +9,7 @@ import Budget from '../models/Budget.js';
 import { OAuth2Client } from 'google-auth-library';
 import nodemailer from 'nodemailer';
 import Otp from '../models/Otp.js';
+import PasswordReset from '../models/PasswordReset.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { sendTelegramNotification } from '../utils/telegram.js';
@@ -103,6 +104,87 @@ const sendOtpEmail = async (email, otp) => {
   // console.log(`Tujuan: ${email}`);
   // console.log(`Kode OTP: ${otp}`);
   // console.log('========================================\n');
+  return false;
+};
+
+// Send Forgot Password OTP Email helper
+const sendForgotPasswordEmail = async (email, otp) => {
+  const isSmtpConfigured = process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS;
+
+  if (isSmtpConfigured) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT || '587'),
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+
+      const mailOptions = {
+        from: `"SmartFinance" <saifulrijal@linsofc.my.id>`,
+        to: email,
+        subject: 'Kode OTP Lupa Password SmartFinance',
+        html: `
+<div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 40px 20px; margin: 0;">
+  
+  <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); overflow: hidden; border: 1px solid #e2e8f0;">
+
+    <div style="text-align: center; padding: 32px 24px 24px; border-bottom: 1px solid #f1f5f9;">
+      <img src="cid:logo" alt="SmartFinance Logo" style="height: 48px; width: auto; margin-bottom: 16px; display: block; margin-left: auto; margin-right: auto;">
+      <h2 style="color: #0f172a; margin: 0; font-size: 20px; font-weight: 600;">Reset Password</h2>
+    </div>
+
+    <div style="padding: 32px 24px;">
+      <p style="font-size: 15px; line-height: 1.6; color: #334155; margin-top: 0;">Halo,</p>
+      <p style="font-size: 15px; line-height: 1.6; color: #334155;">Kami menerima permintaan untuk mereset password akun <strong>SmartFinance</strong> Anda. Silakan gunakan kode OTP berikut untuk melanjutkan proses reset password:</p>
+
+      <div style="text-align: center; margin: 32px 0;">
+        <div style="display: inline-block; padding: 16px 32px; background-color: #eff6ff; border-radius: 8px; border: 1px dashed #93c5fd;">
+          <span style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #1d4ed8; font-family: 'Courier New', Courier, monospace;">${otp}</span>
+        </div>
+      </div>
+
+      <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 12px 16px; border-radius: 0 4px 4px 0; margin-bottom: 24px;">
+        <p style="font-size: 13px; color: #991b1b; margin: 0; line-height: 1.5;">
+          <strong>Penting:</strong> Kode OTP ini bersifat rahasia dan hanya berlaku selama <strong>1 menit</strong>. Jangan pernah membagikan kode ini kepada siapa pun.
+        </p>
+      </div>
+
+      <p style="font-size: 14px; line-height: 1.6; color: #64748b; margin-bottom: 0;">Jika Anda tidak meminta reset password ini, Anda dapat mengabaikan email ini dengan aman.</p>
+    </div>
+
+    <div style="background-color: #f8fafc; padding: 24px; text-align: center; border-top: 1px solid #e2e8f0;">
+      <p style="font-size: 12px; color: #64748b; margin: 0 0 8px 0;">Linsofc | Smart Finance | © 2026</p>
+      <p style="font-size: 11px; color: #94a3b8; margin: 0;">Email ini dikirim secara otomatis oleh sistem. Mohon tidak membalas email ini.</p>
+    </div>
+
+  </div>
+</div>
+        `,
+        attachments: [{
+          filename: 'logo.png',
+          path: path.join(__dirname, '../../public/logo.png'),
+          cid: 'logo'
+        }]
+      };
+
+      await transporter.sendMail(mailOptions);
+      console.log(`✉️ Email OTP Reset Password berhasil dikirim ke ${email}`);
+      return true;
+    } catch (error) {
+      console.error('❌ Gagal mengirim email OTP reset password via SMTP:', error);
+    }
+  }
+
+  // Fallback to console logging in development
+  console.log('\n========================================');
+  console.log(`📬 [OTP RESET PASSWORD]`);
+  console.log(`Tujuan: ${email}`);
+  console.log(`Kode OTP: ${otp}`);
+  console.log('========================================\n');
   return false;
 };
 
@@ -209,6 +291,114 @@ router.post('/register/verify', async (req, res) => {
     }
     console.error('Register Verify Error:', error);
     res.status(500).json({ message: 'Server error saat verifikasi OTP.' });
+  }
+});
+
+// POST /api/auth/forgot-password (Send Password Reset OTP)
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Email harus diisi.' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'Email tidak terdaftar.' });
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Delete any existing password reset OTPs for this email
+    await PasswordReset.deleteMany({ email });
+
+    // Store the new OTP
+    const resetRecord = new PasswordReset({ email, otp });
+    await resetRecord.save();
+
+    // Send OTP email
+    await sendForgotPasswordEmail(email, otp);
+
+    res.status(200).json({
+      message: 'Kode OTP reset password telah dikirim ke email Anda.',
+      email,
+      otp_sent: true,
+      ...(process.env.NODE_ENV !== 'production' && { debug_otp: otp })
+    });
+  } catch (error) {
+    console.error('Forgot Password Init Error:', error);
+    res.status(500).json({ message: 'Gagal menginisiasi reset password.' });
+  }
+});
+
+// POST /api/auth/reset-password/verify (Verify OTP)
+router.post('/reset-password/verify', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ message: 'Email dan OTP harus diisi.' });
+    }
+
+    const resetRecord = await PasswordReset.findOne({ email }).sort({ createdAt: -1 });
+    if (!resetRecord) {
+      return res.status(400).json({ message: 'Kode OTP tidak ditemukan atau sudah kedaluwarsa.' });
+    }
+
+    if (resetRecord.otp !== otp) {
+      return res.status(400).json({ message: 'Kode OTP salah.' });
+    }
+
+    res.status(200).json({ message: 'OTP valid.', verified: true });
+  } catch (error) {
+    console.error('Verify Reset OTP Error:', error);
+    res.status(500).json({ message: 'Server error saat memvalidasi OTP.' });
+  }
+});
+
+// POST /api/auth/reset-password (Execute Reset Password)
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, otp, password } = req.body;
+
+    if (!email || !otp || !password) {
+      return res.status(400).json({ message: 'Semua field harus diisi.' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password minimal 6 karakter.' });
+    }
+
+    // Find the OTP record
+    const resetRecord = await PasswordReset.findOne({ email }).sort({ createdAt: -1 });
+    if (!resetRecord) {
+      return res.status(400).json({ message: 'Kode OTP tidak ditemukan atau sudah kedaluwarsa.' });
+    }
+
+    if (resetRecord.otp !== otp) {
+      return res.status(400).json({ message: 'Kode OTP salah.' });
+    }
+
+    // Update the user's password
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User tidak ditemukan.' });
+    }
+
+    user.password = password;
+    await user.save();
+
+    // Clean up OTP record
+    await PasswordReset.deleteMany({ email });
+
+    res.status(200).json({ message: 'Password berhasil diubah! Silakan login dengan password baru.' });
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message);
+      return res.status(400).json({ message: messages.join(', ') });
+    }
+    console.error('Reset Password Execute Error:', error);
+    res.status(500).json({ message: 'Server error saat mereset password.' });
   }
 });
 
