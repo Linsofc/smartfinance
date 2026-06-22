@@ -9,6 +9,7 @@ import budgetRoutes from './routes/budgets.js';
 import transferRoutes from './routes/transfers.js';
 import dataRoutes from './routes/data.js';
 import aiRoutes from './routes/ai.js';
+import { documentationMarkdown } from './utils/documentation.js';
 
 dotenv.config();
 
@@ -42,6 +43,12 @@ app.use('/api/budgets', budgetRoutes);
 app.use('/api/transfers', transferRoutes);
 app.use('/api/data', dataRoutes);
 app.use('/api/v1/ai', aiRoutes);
+
+// Public API integration documentation for AI Agents
+app.get('/api/dokumentasi', (req, res) => {
+  res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+  res.send(documentationMarkdown);
+});
 
 // Health check
 app.get('/api/health', (req, res) => {

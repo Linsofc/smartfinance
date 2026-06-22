@@ -246,8 +246,8 @@ TABUNGAN (Pro):
    ⚠️ JANGAN pakai create_transaction untuk tabungan!
 
 BUDGET & ASET (Pro):
-⓬ create_budget — limit pengeluaran per kategori
-⓭ create_asset / update_asset_value — track saham/emas/properti
+⓬ manage_budget — POST /budget untuk atur limit, DELETE /budget untuk hapus, GET /budgets untuk list limit
+⓭ create_asset / update_asset_value — track saham/emas/properti (fitur backend belum tersedia)
 
 ═════════ STATUS PRO USER ═════════
 
@@ -371,13 +371,24 @@ Bot:  → DELETE /transaction?id=xxx&confirm=true ✅
 🟢 Contoh 9 — Edit transaksi (JANGAN delete + buat baru)
 
 User: "kopi tadi salah, harusnya 7500 bukan 5000"
-Bot:  → GET /transactions?search=kopi&limit=3 → cari id
-      📝 Draft koreksi:
-        • Transaksi: 'beli kopi'
-        • Amount: Rp 5.000 → Rp 7.500
-      Update? (ya/batal)
+Bot:  → GET /transactions?search=kopi&limit=3 → cari id
+      📝 Draft koreksi:
+        • Transaksi: 'beli kopi'
+        • Amount: Rp 5.000 → Rp 7.500
+      Update? (ya/batal)
 User: "ya"
-Bot:  → PATCH /transaction body: {"id":"xxx","amount":7500} ✅`;
+Bot:  → PATCH /transaction body: {"id":"xxx","amount":7500} ✅
+
+🟢 Contoh 10 — Mengatur/Membuat Anggaran Kategori
+
+User: "set budget makan jadi 1jt"
+Bot:  → 📝 Draft anggaran baru:
+         • Kategori: Makanan
+         • Limit: Rp 1.000.000 / bulan
+      Simpan anggaran? (ya/batal)
+User: "ya"
+Bot:  → POST /budget body: {"categoryName":"Makanan","amount":1000000} ✅
+      Anggaran Makanan Rp 1.000.000 berhasil disimpan.`;
 
   const skillPackJsonText = JSON.stringify([
     {
@@ -416,7 +427,7 @@ Bot:  → PATCH /transaction body: {"id":"xxx","amount":7500} ✅`;
     }
   ], null, 2);
 
-  const endpointDocumentationUrl = `${baseUrl}/api/v1/ai/action-instructions`;
+  const endpointDocumentationUrl = `${baseUrl}/api/v1/ai/dokumentasi`;
 
   return (
     <div className="min-h-screen bg-canvas pb-24 sm:pb-12 font-sans">
@@ -469,25 +480,6 @@ Bot:  → PATCH /transaction body: {"id":"xxx","amount":7500} ✅`;
           </div>
         ) : (
           <div className="space-y-6">
-            
-            {/* Kuota API & AI Box */}
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-surface-1 rounded-3xl border border-hairline-soft p-6 shadow-sm space-y-4"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs uppercase font-bold text-ink-muted tracking-wider">Status Layanan</span>
-                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/15 px-3 py-1 rounded-full border border-emerald-500/20">Pro - Unlimited</span>
-              </div>
-              <div className="p-4 rounded-2xl flex gap-4 items-start" style={{ background: 'linear-gradient(135deg, rgba(34,197,94,0.08), rgba(16,185,129,0.03))', border: '1px solid rgba(16,185,129,0.15)' }}>
-                <Sparkles size={22} className="text-emerald-500 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">Akun Pro — Pemakaian API Unlimited</p>
-                  <p className="text-xs text-ink-muted mt-1.5 leading-relaxed">Anda dapat menghubungkan bot atau AI Agent (seperti OpenClaw, Hermes) tanpa ada batasan kuota harian.</p>
-                </div>
-              </div>
-            </motion.div>
 
             {/* API Keys Generator */}
             <motion.div 
@@ -644,7 +636,7 @@ Bot:  → PATCH /transaction body: {"id":"xxx","amount":7500} ✅`;
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-ink">Konfigurasi Siap Pakai</h3>
-                  <p className="text-xs text-ink-muted">Salin pengaturan ini ke AI Agent Anda (Prompt & Functions).</p>
+                  <p className="text-xs text-ink-muted">Salin pengaturan ini ke AI Agent Anda (Prompt & Dokumentasi).</p>
                 </div>
               </div>
 
@@ -666,25 +658,9 @@ Bot:  → PATCH /transaction body: {"id":"xxx","amount":7500} ✅`;
                   </div>
                 </div>
 
-                {/* 2. Skill Pack JSON */}
+                {/* 2. Dokumentasi URL */}
                 <div className="space-y-2">
-                  <span className="font-bold text-sm text-ink block">2. Function Calling (JSON)</span>
-                  <div className="relative group">
-                    <button
-                      onClick={() => handleCopy(skillPackJsonText, 'json')}
-                      className="absolute top-3 right-3 p-2 bg-surface-2/90 backdrop-blur border border-hairline-soft rounded-lg text-xs font-medium text-ink-muted hover:text-ink flex items-center gap-1.5 transition-all opacity-80 hover:opacity-100 z-10 shadow-sm"
-                    >
-                      {copiedField === 'json' ? <><Check size={14} className="text-emerald-500" /> Tersalin</> : <><Copy size={14} /> Salin</>}
-                    </button>
-                    <pre className="p-4 bg-[#0d1117] text-[#c9d1d9] font-mono text-xs rounded-2xl overflow-x-auto max-h-64 leading-relaxed scrollbar-thin scrollbar-thumb-surface-3 scrollbar-track-transparent border border-[#30363d]">
-                      {skillPackJsonText}
-                    </pre>
-                  </div>
-                </div>
-
-                {/* 3. Endpoint Dokumentasi */}
-                <div className="space-y-2">
-                  <span className="font-bold text-sm text-ink block">3. Endpoint Base URL</span>
+                  <span className="font-bold text-sm text-ink block">2. Dokumentasi</span>
                   <div className="flex gap-3">
                     <input
                       type="text"
@@ -724,47 +700,42 @@ Bot:  → PATCH /transaction body: {"id":"xxx","amount":7500} ✅`;
               {/* Chat Simulation bubbles */}
               <div className="p-5 rounded-2xl bg-[#f8fafc] dark:bg-[#0f172a] space-y-5 border border-hairline-soft shadow-inner">
                 
-                {/* Bubble 1 */}
+                {/* Bubble 1: User request */}
                 <div className="flex flex-col items-end space-y-1.5">
                   <div className="px-4 py-2.5 rounded-2xl bg-indigo-600 text-white text-xs sm:text-sm max-w-[85%] rounded-tr-sm shadow-sm">
-                    beli kopi 5rb di warung pake cash
+                    beli kopi 5rb di warung pake cash, masuk Makanan
                   </div>
                 </div>
 
+                {/* Bubble 2: Bot draft response */}
                 <div className="flex flex-col items-start space-y-1.5">
-                  <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm max-w-[90%] rounded-tl-sm text-slate-700 dark:text-slate-300 leading-relaxed font-sans shadow-sm">
-                    ✅ <b className="text-slate-900 dark:text-white">Catatan Keuangan Berhasil!</b><br/><br/>
-                    <div className="space-y-1">
-                      <p>🔴 <b>Tipe:</b> Pengeluaran</p>
-                      <p>💰 <b>Jumlah:</b> Rp 5.000</p>
-                      <p>📁 <b>Kategori:</b> Makanan</p>
-                      <p>💳 <b>Dompet:</b> Cash</p>
-                      <p>📝 <b>Catatan:</b> kopi di warung</p>
+                  <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm max-w-[90%] rounded-tl-sm text-slate-700 dark:text-slate-300 leading-relaxed font-sans shadow-sm w-full sm:w-auto">
+                    📝 <b className="text-slate-900 dark:text-white">Draft transaksi:</b><br/>
+                    <div className="space-y-1 pl-2 mt-2 font-mono text-[11px] sm:text-xs">
+                      <p>• <b>Tipe:</b> Pengeluaran</p>
+                      <p>• <b>Jumlah:</b> Rp 5.000</p>
+                      <p>• <b>Kategori:</b> Makanan</p>
+                      <p>• <b>Dompet:</b> Cash (saldo: Rp 200.000)</p>
+                      <p>• <b>Catatan:</b> beli kopi di warung</p>
+                      <p>• <b>Tanggal:</b> hari ini</p>
                     </div>
-                    <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700 font-semibold text-emerald-600 dark:text-emerald-400">
-                      💵 Saldo Cash Sekarang: Rp 145.000
+                    <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700 font-semibold text-indigo-600 dark:text-indigo-400">
+                      Lanjut catat? (ya / edit / batal)
                     </div>
                   </div>
                 </div>
 
-                {/* Bubble 2 */}
+                {/* Bubble 3: User confirmation */}
                 <div className="flex flex-col items-end space-y-1.5">
                   <div className="px-4 py-2.5 rounded-2xl bg-indigo-600 text-white text-xs sm:text-sm max-w-[85%] rounded-tr-sm shadow-sm">
-                    berapa saldo total?
+                    ya
                   </div>
                 </div>
 
+                {/* Bubble 4: Bot success response */}
                 <div className="flex flex-col items-start space-y-1.5">
                   <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm max-w-[90%] rounded-tl-sm text-slate-700 dark:text-slate-300 leading-relaxed font-sans shadow-sm">
-                    💵 <b className="text-slate-900 dark:text-white">Saldo Dompet Anda:</b><br/><br/>
-                    <ul className="space-y-1 list-disc list-inside ml-1">
-                      <li><b>Cash</b>: Rp 145.000</li>
-                      <li><b>BCA</b>: Rp 4.800.000</li>
-                      <li><b>Dana</b>: Rp 200.000</li>
-                    </ul>
-                    <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700 font-bold text-indigo-600 dark:text-indigo-400">
-                      📊 Total Saldo: Rp 5.145.000
-                    </div>
+                    ✅ <span className="font-semibold text-emerald-600 dark:text-emerald-400">Tercatat: Makanan Rp 5.000 di Cash. Saldo Cash sekarang Rp 195.000</span>
                   </div>
                 </div>
 

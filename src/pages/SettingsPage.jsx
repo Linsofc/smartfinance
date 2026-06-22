@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { useDataCache } from '../context/DataCacheContext';
 import Swal from 'sweetalert2';
+import packageJson from '../../package.json';
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
@@ -519,7 +520,7 @@ export default function SettingsPage() {
           <MenuItem
             icon={<Info size={18} />}
             label="Tentang Aplikasi"
-            sublabel="SmartFinance v1.6.0"
+            sublabel={`SmartFinance v${packageJson.version}`}
             onClick={() => setAboutModal(true)}
           />
           <div className="h-px bg-hairline-soft mx-4" />
@@ -857,7 +858,7 @@ export default function SettingsPage() {
                     <img src="/logo.png" alt="SmartFinance Logo" className="w-full h-full object-contain" />
                   </div>
                   <h3 className="text-lg font-bold text-ink">SmartFinance</h3>
-                  <p className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full mt-1.5">v1.6.0 Pro</p>
+                  <p className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full mt-1.5">v{packageJson.version} Pro</p>
                   
                   <p className="text-xs text-ink-muted leading-relaxed mt-4 px-2">
                     SmartFinance adalah platform manajemen keuangan pribadi modern yang dirancang untuk membantu Anda memantau pengeluaran, mengelola anggaran, serta memaksimalkan otomatisasi pencatatan keuangan secara cerdas.
@@ -872,7 +873,7 @@ export default function SettingsPage() {
                   <div className="h-px bg-hairline-soft" />
                   <div className="flex justify-between items-center">
                     <span className="text-ink-muted">Version</span>
-                    <span className="font-semibold text-ink">1.6.0</span>
+                    <span className="font-semibold text-ink">{packageJson.version}</span>
                   </div>
                   <div className="h-px bg-hairline-soft" />
                   <div className="flex justify-between items-center">

@@ -8,6 +8,7 @@ import Transfer from '../models/Transfer.js';
 import Budget from '../models/Budget.js';
 import auth from '../middleware/auth.js';
 import { invalidateCache } from '../utils/cache.js';
+import { documentationMarkdown } from '../utils/documentation.js';
 
 const router = express.Router();
 
@@ -609,7 +610,108 @@ router.put('/transaction/:id', aiAuth, async (req, res, next) => {
     console.error("AI Update Transaction error:", err);
     res.status(500).json({ message: 'Server error saat memperbarui transaksi.' });
   }
-});// GET /api/v1/ai/openapi.json
+});
+
+/* ==========================================
+   5. BUDGET ENDPOINTS FOR AI
+   ========================================== */
+
+// GET /api/v1/ai/budgets
+router.get('/budgets', aiAuth, async (req, res) => {
+  try {
+    const budgets = await Budget.find({ userId: req.userId });
+    res.json({
+      budgets: budgets.map(b => ({
+        id: b._id,
+        category: b.category,
+        amount: b.amount,
+        icon: b.icon
+      }))
+    });
+  } catch (err) {
+    console.error("AI Budgets fetch error:", err);
+    res.status(500).json({ message: 'Server error saat mengambil daftar anggaran.' });
+  }
+});
+
+// POST /api/v1/ai/budget
+router.post('/budget', aiAuth, async (req, res) => {
+  try {
+    const { categoryName, category, amount, icon } = req.body;
+    const cat = categoryName || category;
+
+    if (!cat || amount === undefined || isNaN(amount) || Number(amount) < 0) {
+      return res.status(400).json({ message: 'Kategori dan jumlah anggaran yang valid harus diisi.' });
+    }
+
+    // Upsert budget
+    const budget = await Budget.findOneAndUpdate(
+      { userId: req.userId, category: cat },
+      { amount: Number(amount), icon: icon || '💰' },
+      { new: true, upsert: true, runValidators: true }
+    );
+
+    invalidateCache(`budgets:${req.userId}`);
+    res.status(201).json({
+      message: 'Anggaran berhasil disimpan!',
+      budget: {
+        id: budget._id,
+        category: budget.category,
+        amount: budget.amount,
+        icon: budget.icon
+      }
+    });
+  } catch (err) {
+    console.error("AI Budget set error:", err);
+    res.status(500).json({ message: 'Server error saat menyimpan anggaran.' });
+  }
+});
+
+// DELETE /api/v1/ai/budget
+router.delete('/budget', aiAuth, async (req, res) => {
+  try {
+    const id = req.query.id || req.body.id;
+    const categoryName = req.query.categoryName || req.body.categoryName || req.query.category || req.body.category;
+    
+    let filter = { userId: req.userId };
+    if (id) {
+      filter._id = id;
+    } else if (categoryName) {
+      filter.category = categoryName;
+    } else {
+      return res.status(400).json({ message: 'ID anggaran atau Nama Kategori harus disertakan.' });
+    }
+
+    const budget = await Budget.findOneAndDelete(filter);
+    if (!budget) {
+      return res.status(404).json({ message: 'Anggaran tidak ditemukan.' });
+    }
+
+    invalidateCache(`budgets:${req.userId}`);
+    res.json({ message: 'Anggaran berhasil dihapus!' });
+  } catch (err) {
+    console.error("AI Budget delete error:", err);
+    res.status(500).json({ message: 'Server error saat menghapus anggaran.' });
+  }
+});
+
+// DELETE /api/v1/ai/budget/:id
+router.delete('/budget/:id', aiAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const budget = await Budget.findOneAndDelete({ _id: id, userId: req.userId });
+    if (!budget) {
+      return res.status(404).json({ message: 'Anggaran tidak ditemukan.' });
+    }
+    invalidateCache(`budgets:${req.userId}`);
+    res.json({ message: 'Anggaran berhasil dihapus!' });
+  } catch (err) {
+    console.error("AI Budget delete param error:", err);
+    res.status(500).json({ message: 'Server error saat menghapus anggaran.' });
+  }
+});
+
+// GET /api/v1/ai/openapi.json
 router.get('/openapi.json', async (req, res) => {
   res.json({
     openapi: "3.0.0",
@@ -805,6 +907,62 @@ router.get('/openapi.json', async (req, res) => {
           ],
           responses: {
             "200": { description: "Daftar transaksi berhasil diambil." }
+          }
+        }
+      },
+      "/budgets": {
+        get: {
+          summary: "Mengambil Daftar Anggaran",
+          description: "Mendapatkan seluruh data anggaran belanja bulanan aktif pengguna.",
+          responses: {
+            "200": { description: "Daftar anggaran berhasil diambil." }
+          }
+        }
+      },
+      "/budget": {
+        post: {
+          summary: "Menyimpan/Memperbarui Anggaran",
+          description: "Menetapkan limit atau mengubah nominal anggaran belanja per kategori.",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["categoryName", "amount"],
+                  properties: {
+                    categoryName: { type: "string" },
+                    amount: { type: "number" },
+                    icon: { type: "string" }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            "201": { description: "Anggaran berhasil disimpan." }
+          }
+        },
+        delete: {
+          summary: "Menghapus Anggaran",
+          description: "Menghapus anggaran belanja berdasarkan ID atau Nama Kategori.",
+          parameters: [
+            { name: "id", in: "query", schema: { type: "string" } },
+            { name: "categoryName", in: "query", schema: { type: "string" } }
+          ],
+          responses: {
+            "200": { description: "Anggaran berhasil dihapus." }
+          }
+        }
+      },
+      "/budget/{id}": {
+        delete: {
+          summary: "Menghapus Anggaran via ID Path",
+          parameters: [
+            { name: "id", in: "path", required: true, schema: { type: "string" } }
+          ],
+          responses: {
+            "200": { description: "Anggaran berhasil dihapus." }
           }
         }
       }
@@ -1446,6 +1604,24 @@ Semua request API harus menyertakan header \`X-API-KEY\` yang valid.
    - **Endpoint:** \`PUT /api/v1/ai/transaction/:id\` atau \`PUT /api/v1/ai/transaction\`
    - **Request Body (JSON, opsional):** \`amount\`, \`category\`, \`description\`, \`walletName\`
 
+8. **Melihat Anggaran Belanja**
+   - **Endpoint:** \`GET /api/v1/ai/budgets\`
+
+9. **Mengatur/Membuat Anggaran Belanja**
+   - **Endpoint:** \`POST /api/v1/ai/budget\`
+   - **Request Body (JSON):**
+     \`\`\`json
+     {
+       "categoryName": "Makanan",
+       "amount": 1000000,
+       "icon": "🍔" (opsional)
+     }
+     \`\`\`
+
+10. **Menghapus Anggaran Belanja**
+    - **Endpoint:** \`DELETE /api/v1/ai/budget\` atau \`DELETE /api/v1/ai/budget/:id\`
+    - **Query Params / Request Body:** \`id\` atau \`categoryName\`
+
 ## Penanganan Respon Error (Self-Correction)
 - Jika Anda mengirimkan \`walletName\` yang tidak terdaftar, API akan mengembalikan status \`400 Bad Request\` dengan field \`availableWallets\` berisi daftar dompet valid. Contoh:
   \`\`\`json
@@ -1461,6 +1637,12 @@ Semua request API harus menyertakan header \`X-API-KEY\` yang valid.
 - Gunakan data dompet dan kategori yang ada pada konteks pengguna. Jangan berasumsi nama dompet atau kategori baru kecuali dikonfirmasi oleh pengguna.
 - Laporkan saldo terbaru setelah melakukan transaksi atau transfer.
 `);
+});
+
+// GET /api/v1/ai/dokumentasi
+router.get('/dokumentasi', (req, res) => {
+  res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+  res.send(documentationMarkdown);
 });
 
 export default router;
