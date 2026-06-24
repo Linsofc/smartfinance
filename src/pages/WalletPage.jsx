@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+﻿import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, 
@@ -19,6 +19,7 @@ import {
 import { useDataCache } from '../context/DataCacheContext';
 import WALLET_LOGOS, { WalletLogo, LogoBadge } from '../components/WalletLogos';
 import Swal from 'sweetalert2';
+import { WalletSkeleton } from '../components/Skeleton';
 
 const WALLET_ICONS = {
   wallet: WalletIcon,
@@ -47,6 +48,7 @@ export default function WalletPage() {
   const [wallets, setWallets] = useState([]);
   const [totalBalance, setTotalBalance] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const cache = useDataCache();
   
   // Wallet CRUD Modals
@@ -82,11 +84,13 @@ export default function WalletPage() {
 
   const fetchWallets = useCallback(async (opts) => {
     try {
+      setError('');
       const data = await cache.fetchWallets(opts);
       setWallets(data.wallets);
       setTotalBalance(data.totalBalance);
     } catch (error) {
       console.error('Error fetching wallets:', error);
+      setError('Gagal memuat data dompet. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }
@@ -266,17 +270,24 @@ export default function WalletPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-ink-muted border-t-accent-blue rounded-full animate-spin" />
-          <p className="text-ink-muted text-xs">Memuat dompet...</p>
-        </div>
+      <div className="px-4 py-6 space-y-6">
+        <WalletSkeleton />
       </div>
     );
   }
 
   return (
     <div className="px-4 py-6 space-y-6">
+      {/* Error Banner */}
+      {error && (
+        <div className="flex items-center gap-2 bg-danger/10 border border-danger/20 text-danger rounded-2xl px-4 py-3 text-xs">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{error}</span>
+          <button onClick={() => setError('')} className="ml-auto p-1 hover:bg-danger/10 rounded-full">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

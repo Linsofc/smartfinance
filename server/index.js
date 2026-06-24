@@ -1,6 +1,7 @@
-process.env.TZ = 'Asia/Jakarta';
+﻿process.env.TZ = 'Asia/Jakarta';
 
 import express from 'express';
+import helmet from 'helmet';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
@@ -19,6 +20,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
+app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: '5mb' }));
 
@@ -26,6 +28,13 @@ app.use(express.json({ limit: '5mb' }));
 const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) {
   console.error('❌ MONGODB_URI is not defined in .env file');
+  process.exit(1);
+}
+
+// Validate JWT_SECRET
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('❌ JWT_SECRET is not defined in .env file');
   process.exit(1);
 }
 
@@ -70,3 +79,6 @@ if (process.env.NODE_ENV !== 'production') {
 
 // Export app for Vercel Serverless Functions
 export default app;
+
+
+

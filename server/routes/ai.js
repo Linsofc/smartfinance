@@ -130,7 +130,7 @@ router.delete('/keys/:id', auth, premiumCheck, async (req, res) => {
    ========================================== */
 
 // GET /api/v1/ai/context
-router.get('/context', aiAuth, async (req, res) => {
+router.get('/context', aiAuth, premiumCheck, async (req, res) => {
   try {
     const wallets = await Wallet.find({ userId: req.userId });
     const user = await User.findById(req.userId);
@@ -197,7 +197,7 @@ router.get('/context', aiAuth, async (req, res) => {
 });
 
 // POST /api/v1/ai/transaction
-router.post('/transaction', aiAuth, async (req, res) => {
+router.post('/transaction', aiAuth, premiumCheck, async (req, res) => {
   try {
     const { type, amount, walletName, categoryName, description, date } = req.body;
 
@@ -273,7 +273,7 @@ router.post('/transaction', aiAuth, async (req, res) => {
 });
 
 // POST /api/v1/ai/transfer
-router.post('/transfer', aiAuth, async (req, res) => {
+router.post('/transfer', aiAuth, premiumCheck, async (req, res) => {
   try {
     const { amount, sourceWalletName, destinationWalletName, description } = req.body;
 
@@ -338,8 +338,84 @@ router.post('/transfer', aiAuth, async (req, res) => {
   }
 });
 
+// POST /api/v1/ai/wallet
+router.post('/wallet', aiAuth, premiumCheck, async (req, res) => {
+  try {
+    const { name, balance, icon, color, type } = req.body;
+    if (!name) {
+      return res.status(400).json({ message: 'Nama dompet harus diisi.' });
+    }
+    const wallet = new Wallet({
+      userId: req.userId,
+      name,
+      balance: balance || 0,
+      icon: icon || 'wallet',
+      color: color || '#6a4cf5',
+      type: type || 'Tunai'
+    });
+    await wallet.save();
+    invalidateCache('wallets:' + req.userId);
+    res.status(201).json({ message: 'Dompet berhasil ditambahkan!', wallet });
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message);
+      return res.status(400).json({ message: messages.join(', ') });
+    }
+    console.error('AI create wallet error:', error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// PUT /api/v1/ai/wallet
+router.put('/wallet', aiAuth, premiumCheck, async (req, res) => {
+  try {
+    const { id, name, type, icon, color } = req.body;
+    if (!id) {
+      return res.status(400).json({ message: 'ID dompet harus diisi.' });
+    }
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (type) updateData.type = type;
+    if (icon) updateData.icon = icon;
+    if (color) updateData.color = color;
+
+    const wallet = await Wallet.findOneAndUpdate(
+      { _id: id, userId: req.userId },
+      updateData,
+      { new: true, runValidators: true }
+    );
+    if (!wallet) {
+      return res.status(404).json({ message: 'Dompet tidak ditemukan.' });
+    }
+    invalidateCache('wallets:' + req.userId);
+    res.json({ message: 'Dompet berhasil diperbarui!', wallet });
+  } catch (error) {
+    console.error('AI update wallet error:', error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// DELETE /api/v1/ai/wallet
+router.delete('/wallet', aiAuth, premiumCheck, async (req, res) => {
+  try {
+    const { id } = req.query;
+    if (!id) {
+      return res.status(400).json({ message: 'Parameter id harus diisi.' });
+    }
+    const wallet = await Wallet.findOneAndDelete({ _id: id, userId: req.userId });
+    if (!wallet) {
+      return res.status(404).json({ message: 'Dompet tidak ditemukan.' });
+    }
+    invalidateCache('wallets:' + req.userId);
+    res.json({ message: 'Dompet berhasil dihapus!' });
+  } catch (error) {
+    console.error('AI delete wallet error:', error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
 // GET /api/v1/ai/balance
-router.get('/balance', aiAuth, async (req, res) => {
+router.get('/balance', aiAuth, premiumCheck, async (req, res) => {
   try {
     const wallets = await Wallet.find({ userId: req.userId });
     res.json({
@@ -352,12 +428,18 @@ router.get('/balance', aiAuth, async (req, res) => {
 });
 
 // GET /api/v1/ai/transactions
-router.get('/transactions', aiAuth, async (req, res) => {
+router.get('/transactions', aiAuth, premiumCheck, async (req, res) => {
   try {
-    const { limit = 50, category, type } = req.query;
+    const { limit = 50, category, type, search } = req.query;
     let filter = { userId: req.userId };
     if (category) filter.category = category;
     if (type) filter.type = type.toUpperCase();
+    if (search) {
+      filter.$or = [
+        { note: { $regex: search, $options: 'i' } },
+        { category: { $regex: search, $options: 'i' } }
+      ];
+    }
 
     const transactions = await Transaction.find(filter)
       .sort({ date: -1 })
@@ -382,7 +464,7 @@ router.get('/transactions', aiAuth, async (req, res) => {
 });
 
 // DELETE /api/v1/ai/transaction/:id (REST style)
-router.delete('/transaction/:id', aiAuth, async (req, res) => {
+router.delete('/transaction/:id', aiAuth, premiumCheck, async (req, res) => {
   try {
     const { id } = req.params;
     const oldTransaction = await Transaction.findOne({ _id: id, userId: req.userId });
@@ -419,7 +501,7 @@ router.delete('/transaction/:id', aiAuth, async (req, res) => {
 });
 
 // DELETE /api/v1/ai/transaction (Support query param ?id=xxx)
-router.delete('/transaction', aiAuth, async (req, res) => {
+router.delete('/transaction', aiAuth, premiumCheck, async (req, res) => {
   try {
     const { id } = req.query;
     if (!id) {
@@ -459,7 +541,7 @@ router.delete('/transaction', aiAuth, async (req, res) => {
 });
 
 // PUT /api/v1/ai/transaction (Support updating transaction)
-router.put('/transaction', aiAuth, async (req, res) => {
+router.put('/transaction', aiAuth, premiumCheck, async (req, res) => {
   try {
     const id = req.body.id || req.body._id || req.query.id;
     if (!id) {
@@ -538,7 +620,7 @@ router.put('/transaction', aiAuth, async (req, res) => {
 });
 
 // PUT /api/v1/ai/transaction/:id (REST style)
-router.put('/transaction/:id', aiAuth, async (req, res, next) => {
+router.put('/transaction/:id', aiAuth, premiumCheck, async (req, res, next) => {
   req.query.id = req.params.id;
   next();
 }, async (req, res) => {
@@ -612,12 +694,53 @@ router.put('/transaction/:id', aiAuth, async (req, res, next) => {
   }
 });
 
+// POST /api/v1/ai/category
+router.post('/category', aiAuth, premiumCheck, async (req, res) => {
+  try {
+    const { name, icon, color, type } = req.body;
+    if (!name || !icon || !color || !type) {
+      return res.status(400).json({ message: 'Semua field kategori (name, icon, color, type) harus diisi.' });
+    }
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User tidak ditemukan.' });
+    }
+    const isDuplicate = user.customCategories.some(
+      cat => cat.name.toLowerCase() === name.toLowerCase() && cat.type === type
+    );
+    if (isDuplicate) {
+      return res.status(400).json({ message: 'Kategori dengan nama dan tipe ini sudah ada.' });
+    }
+    user.customCategories.push({ name, icon, color, type });
+    await user.save();
+    invalidateCache('categories:' + req.userId);
+    res.status(201).json(user.customCategories);
+  } catch (error) {
+    console.error('AI create category error:', error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// GET /api/v1/ai/categories
+router.get('/categories', aiAuth, premiumCheck, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User tidak ditemukan.' });
+    }
+    res.json(user.customCategories || []);
+  } catch (error) {
+    console.error('AI fetch categories error:', error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
 /* ==========================================
    5. BUDGET ENDPOINTS FOR AI
    ========================================== */
 
 // GET /api/v1/ai/budgets
-router.get('/budgets', aiAuth, async (req, res) => {
+router.get('/budgets', aiAuth, premiumCheck, async (req, res) => {
   try {
     const budgets = await Budget.find({ userId: req.userId });
     res.json({
@@ -635,7 +758,7 @@ router.get('/budgets', aiAuth, async (req, res) => {
 });
 
 // POST /api/v1/ai/budget
-router.post('/budget', aiAuth, async (req, res) => {
+router.post('/budget', aiAuth, premiumCheck, async (req, res) => {
   try {
     const { categoryName, category, amount, icon } = req.body;
     const cat = categoryName || category;
@@ -668,7 +791,7 @@ router.post('/budget', aiAuth, async (req, res) => {
 });
 
 // DELETE /api/v1/ai/budget
-router.delete('/budget', aiAuth, async (req, res) => {
+router.delete('/budget', aiAuth, premiumCheck, async (req, res) => {
   try {
     const id = req.query.id || req.body.id;
     const categoryName = req.query.categoryName || req.body.categoryName || req.query.category || req.body.category;
@@ -696,7 +819,7 @@ router.delete('/budget', aiAuth, async (req, res) => {
 });
 
 // DELETE /api/v1/ai/budget/:id
-router.delete('/budget/:id', aiAuth, async (req, res) => {
+router.delete('/budget/:id', aiAuth, premiumCheck, async (req, res) => {
   try {
     const { id } = req.params;
     const budget = await Budget.findOneAndDelete({ _id: id, userId: req.userId });
@@ -744,6 +867,96 @@ router.get('/openapi.json', async (req, res) => {
       { ApiKeyAuth: [] }
     ],
     paths: {
+      "/wallet": {
+        post: {
+          summary: "Membuat Dompet Baru",
+          description: "Membuat dompet keuangan baru untuk pengguna.",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    name: { type: "string", description: "Nama dompet" },
+                    balance: { type: "number", description: "Saldo awal" },
+                    icon: { type: "string", description: "Ikon dompet" },
+                    color: { type: "string", description: "Warna dompet" },
+                    type: { type: "string", enum: ["Tunai","E-Wallet","Tabungan","Investasi","Kartu Kredit","Pinjaman","Lainnya"] }
+                  },
+                  required: ["name"]
+                }
+              }
+            }
+          },
+          responses: {
+            "201": { description: "Dompet berhasil dibuat." },
+            "400": { description: "Validasi gagal." }
+          }
+        },
+        put: {
+          summary: "Memperbarui Dompet",
+          description: "Memperbarui nama, tipe, ikon, atau warna dompet.",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  required: ["id"],
+                  properties: {
+                    id: { type: "string", description: "ID dompet" },
+                    name: { type: "string", description: "Nama baru" },
+                    type: { type: "string", enum: ["Tunai","E-Wallet","Tabungan","Investasi","Kartu Kredit","Pinjaman","Lainnya"] },
+                    icon: { type: "string", description: "Ikon baru" },
+                    color: { type: "string", description: "Warna baru" }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            "200": { description: "Dompet berhasil diperbarui." }
+          }
+        },
+        delete: {
+          summary: "Menghapus Dompet",
+          description: "Menghapus dompet berdasarkan ID (query param).",
+          parameters: [
+            { name: "id", in: "query", required: true, schema: { type: "string" } }
+          ],
+          responses: {
+            "200": { description: "Dompet berhasil dihapus." }
+          }
+        }
+      },
+      "/category": {
+        post: {
+          summary: "Membuat Kategori Baru",
+          description: "Menambahkan kategori transaksi kustom untuk pengguna.",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    name: { type: "string", description: "Nama kategori" },
+                    icon: { type: "string", description: "Emoji/ikon" },
+                    color: { type: "string", description: "Warna kategori" },
+                    type: { type: "string", enum: ["INCOME","EXPENSE"], description: "Tipe transaksi" }
+                  },
+                  required: ["name","icon","color","type"]
+                }
+              }
+            }
+          },
+          responses: {
+            "201": { description: "Kategori berhasil dibuat." },
+            "400": { description: "Validasi gagal atau duplikat." }
+          }
+        }
+      },
       "/context": {
         get: {
           summary: "Mendapatkan Konteks Finansial",
@@ -903,10 +1116,20 @@ router.get('/openapi.json', async (req, res) => {
           parameters: [
             { name: "limit", in: "query", schema: { type: "integer", default: 50 } },
             { name: "type", in: "query", schema: { type: "string", enum: ["INCOME", "EXPENSE"] } },
-            { name: "category", in: "query", schema: { type: "string" } }
+            { name: "category", in: "query", schema: { type: "string" } },
+            { name: "search", in: "query", schema: { type: "string", description: "Cari berdasarkan catatan atau kategori" } }
           ],
           responses: {
             "200": { description: "Daftar transaksi berhasil diambil." }
+          }
+        }
+      },
+      "/categories": {
+        get: {
+          summary: "Mengambil Kategori Kustom",
+          description: "Mendapatkan daftar kategori transaksi kustom milik pengguna.",
+          responses: {
+            "200": { description: "Daftar kategori berhasil diambil." }
           }
         }
       },

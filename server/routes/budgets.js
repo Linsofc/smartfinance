@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import Budget from '../models/Budget.js';
 import auth from '../middleware/auth.js';
 import { getCache, setCache, invalidateCache } from '../utils/cache.js';
@@ -13,13 +13,13 @@ router.use(auth);
 // @access  Private
 router.get('/', async (req, res) => {
   try {
-    const cacheKey = `budgets:${req.user._id}`;
+    const cacheKey = `budgets:${req.userId}`;
     const cached = getCache(cacheKey);
     if (cached) {
       return res.json(cached);
     }
 
-    const budgets = await Budget.find({ userId: req.user._id });
+    const budgets = await Budget.find({ userId: req.userId });
     setCache(cacheKey, budgets);
     res.json(budgets);
   } catch (error) {
@@ -40,12 +40,12 @@ router.post('/', async (req, res) => {
 
     // Upsert budget (update if exists, insert if not)
     const budget = await Budget.findOneAndUpdate(
-      { userId: req.user._id, category },
+      { userId: req.userId, category },
       { amount, icon: icon || '💰' },
       { new: true, upsert: true, runValidators: true }
     );
 
-    invalidateCache(`budgets:${req.user._id}`);
+    invalidateCache(`budgets:${req.userId}`);
     res.status(200).json(budget);
   } catch (error) {
     res.status(400).json({ message: 'Gagal menyimpan anggaran', error: error.message });
@@ -59,14 +59,14 @@ router.delete('/:id', async (req, res) => {
   try {
     const budget = await Budget.findOneAndDelete({ 
       _id: req.params.id,
-      userId: req.user._id 
+      userId: req.userId 
     });
 
     if (!budget) {
       return res.status(404).json({ message: 'Anggaran tidak ditemukan' });
     }
 
-    invalidateCache(`budgets:${req.user._id}`);
+    invalidateCache(`budgets:${req.userId}`);
     res.json({ message: 'Anggaran berhasil dihapus' });
   } catch (error) {
     res.status(500).json({ message: 'Gagal menghapus anggaran', error: error.message });

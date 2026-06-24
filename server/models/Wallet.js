@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+﻿import mongoose from 'mongoose';
 
 const walletSchema = new mongoose.Schema({
   userId: {
@@ -41,6 +41,7 @@ const walletSchema = new mongoose.Schema({
 });
 
 walletSchema.index({ userId: 1 });
+walletSchema.index({ userId: 1, name: 1 }, { unique: true });
 
 const Wallet = mongoose.model('Wallet', walletSchema);
 export default Wallet;

@@ -3,17 +3,17 @@ import api from '../api/axios';
 
 const DataCacheContext = createContext(null);
 
-// Cache TTL in milliseconds (2 minutes — data is "fresh" for this long)
+// Cache TTL in milliseconds (2 minutes â€” data is "fresh" for this long)
 const CACHE_TTL = 2 * 60 * 1000;
 
 /**
  * Centralized in-memory data cache for SmartFinance.
  * 
  * Pattern: Stale-While-Revalidate
- * - If cached data exists and is fresh → return instantly, no network call
- * - If cached data exists but is stale → return instantly, refresh silently in background
- * - If no cached data → fetch from network, show loading
- * - On any mutation (add/update/delete) → invalidate related caches
+ * - If cached data exists and is fresh â†’ return instantly, no network call
+ * - If cached data exists but is stale â†’ return instantly, refresh silently in background
+ * - If no cached data â†’ fetch from network, show loading
+ * - On any mutation (add/update/delete) â†’ invalidate related caches
  */
 export function DataCacheProvider({ children }) {
   // Cache store: { [cacheKey]: { data, timestamp, promise? } }
@@ -26,7 +26,7 @@ export function DataCacheProvider({ children }) {
   const [cacheVersion, setCacheVersion] = useState(0);
   const bumpVersion = () => setCacheVersion(v => v + 1);
 
-  // ─── Generic Cache Helpers ──────────────────────────
+  // â”€â”€â”€ Generic Cache Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const getCacheEntry = useCallback((key) => {
     return cacheRef.current.get(key) || null;
   }, []);
@@ -59,7 +59,7 @@ export function DataCacheProvider({ children }) {
     bumpVersion();
   }, []);
 
-  // ─── Transactions ───────────────────────────────────
+  // â”€â”€â”€ Transactions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const fetchTransactions = useCallback(async (month, year, opts = {}) => {
     const key = `transactions:${month}:${year}`;
     const cached = getCacheEntry(key);
@@ -119,7 +119,7 @@ export function DataCacheProvider({ children }) {
     return res.data;
   }, [invalidateCache]);
 
-  // ─── Analytics ──────────────────────────────────────
+  // â”€â”€â”€ Analytics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const fetchAnalytics = useCallback(async (year, opts = {}) => {
     const key = `analytics:${year}`;
     const cached = getCacheEntry(key);
@@ -149,7 +149,7 @@ export function DataCacheProvider({ children }) {
     return promise;
   }, [getCacheEntry, isFresh, setCacheEntry]);
 
-  // ─── Wallets ────────────────────────────────────────
+  // â”€â”€â”€ Wallets â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const fetchWallets = useCallback(async (opts = {}) => {
     const key = 'wallets';
     const cached = getCacheEntry(key);
@@ -198,7 +198,7 @@ export function DataCacheProvider({ children }) {
     return res.data;
   }, [invalidateCache]);
 
-  // ─── Transfers ──────────────────────────────────────
+  // â”€â”€â”€ Transfers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const fetchTransfers = useCallback(async (opts = {}) => {
     const key = 'transfers';
     const cached = getCacheEntry(key);
@@ -235,7 +235,7 @@ export function DataCacheProvider({ children }) {
     return res.data;
   }, [invalidateCache]);
 
-  // ─── Budgets ────────────────────────────────────────
+  // â”€â”€â”€ Budgets â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const fetchBudgets = useCallback(async (opts = {}) => {
     const key = 'budgets';
     const cached = getCacheEntry(key);
@@ -277,7 +277,7 @@ export function DataCacheProvider({ children }) {
     return res.data;
   }, [invalidateCache]);
 
-  // ─── Categories ─────────────────────────────────────
+  // â”€â”€â”€ Categories â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const fetchCategories = useCallback(async (opts = {}) => {
     const key = 'categories';
     const cached = getCacheEntry(key);
@@ -313,7 +313,7 @@ export function DataCacheProvider({ children }) {
     return res.data;
   }, [invalidateCache]);
 
-  // ─── Fetch All Transactions ─────────────────────────
+  // â”€â”€â”€ Fetch All Transactions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const fetchAllTransactions = useCallback(async (opts = {}) => {
     const key = 'all_transactions';
     const cached = getCacheEntry(key);

@@ -56,6 +56,11 @@ router.post('/', async (req, res) => {
       return res.status(404).json({ message: 'Dompet tujuan tidak ditemukan.' });
     }
 
+    // Check for sufficient balance
+    if (fromWallet.balance < Number(amount)) {
+      return res.status(400).json({ message: 'Saldo dompet asal tidak mencukupi.' });
+    }
+
     // Deduct and add
     fromWallet.balance -= Number(amount);
     toWallet.balance += Number(amount);
@@ -74,7 +79,17 @@ router.post('/', async (req, res) => {
       date: date || new Date()
     });
 
-    await transfer.save();
+    try {
+      await transfer.save();
+    } catch (saveError) {
+      // Rollback wallet balances on transfer save failure
+      fromWallet.balance += Number(amount);
+      toWallet.balance -= Number(amount);
+      await fromWallet.save();
+      await toWallet.save();
+      console.error('Transfer save failed, balances rolled back:', saveError);
+      return res.status(500).json({ message: 'Gagal menyimpan transfer. Saldo telah dikembalikan.' });
+    }
     invalidateCache(`transfers:${req.userId}`);
     invalidateCache(`wallets:${req.userId}`);
 
@@ -86,3 +101,4 @@ router.post('/', async (req, res) => {
 });
 
 export default router;
+

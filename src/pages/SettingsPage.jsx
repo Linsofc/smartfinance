@@ -15,6 +15,7 @@ export default function SettingsPage() {
   const [importing, setImporting] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportingCSV, setExportingCSV] = useState(false);
   const [importModal, setImportModal] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
@@ -275,6 +276,39 @@ export default function SettingsPage() {
     }
   };
 
+  // ─── CSV Export handler ─────────────────────────────
+  const handleExportCSV = async () => {
+    setExportingCSV(true);
+    try {
+      const res = await api.get('/data/export-csv', { responseType: 'blob' });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      a.href = url;
+      a.download = `smartfinance_transactions_${dateStr}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      Swal.fire({
+        title: 'Ekspor CSV Gagal!',
+        text: err.response?.data?.message || 'Gagal mengekspor data CSV.',
+        icon: 'error',
+        background: 'var(--color-surface-1)',
+        color: 'var(--color-ink)',
+        customClass: {
+          popup: 'rounded-[24px] border border-hairline bg-surface-1 text-ink p-6',
+          title: 'text-lg font-bold text-ink',
+          confirmButton: 'px-5 py-2.5 rounded-xl text-sm font-semibold bg-danger text-white'
+        },
+        buttonsStyling: false
+      });
+    } finally {
+      setExportingCSV(false);
+    }
+  };
+
   // ─── Import handlers ────────────────────────────────
   const openImportModal = () => {
     setImportModal(true);
@@ -293,6 +327,23 @@ export default function SettingsPage() {
       Swal.fire({
         title: 'Format Salah!',
         text: 'Hanya file JSON yang didukung.',
+        icon: 'warning',
+        background: 'var(--color-surface-1)',
+        color: 'var(--color-ink)',
+        customClass: {
+          popup: 'rounded-[24px] border border-hairline bg-surface-1 text-ink p-6',
+          title: 'text-lg font-bold text-ink',
+          confirmButton: 'px-5 py-2.5 rounded-xl text-sm font-semibold bg-primary text-white'
+        },
+        buttonsStyling: false
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      Swal.fire({
+        title: 'File Terlalu Besar!',
+        text: 'Ukuran file maksimal 5MB. Pilih file yang lebih kecil.',
         icon: 'warning',
         background: 'var(--color-surface-1)',
         color: 'var(--color-ink)',
@@ -446,6 +497,30 @@ export default function SettingsPage() {
             </div>
             {exporting ? (
               <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin shrink-0" />
+            ) : (
+              <ChevronRight size={16} className="text-ink-muted/50 shrink-0" />
+            )}
+          </button>
+
+          <div className="h-px bg-hairline-soft mx-4" />
+
+          <button
+            onClick={handleExportCSV}
+            disabled={exportingCSV}
+            className="w-full p-4 flex items-center gap-3 hover:bg-surface-2/50 transition-colors text-left"
+          >
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.15), rgba(52,211,153,0.15))' }}>
+              <Download size={18} className="text-emerald-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-ink">Ekspor CSV</p>
+              <p className="text-xs text-ink-muted truncate mt-0.5">
+                {exportingCSV ? 'Mengunduh...' : 'Unduh transaksi sebagai file CSV'}
+              </p>
+            </div>
+            {exportingCSV ? (
+              <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin shrink-0" />
             ) : (
               <ChevronRight size={16} className="text-ink-muted/50 shrink-0" />
             )}

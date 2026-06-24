@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, ChevronRight, Settings, X, AlertTriangle } from 'lucide-react';
 import { useDataCache } from '../context/DataCacheContext';
+import { BudgetSkeleton } from '../components/Skeleton';
 
 export default function BudgetPage() {
   const navigate = useNavigate();
@@ -10,6 +11,12 @@ export default function BudgetPage() {
   const [budgets, setBudgets] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dismissedWarnings, setDismissedWarnings] = useState(() => {
+    try {
+      const saved = localStorage.getItem('budget_dismissed_warnings');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
   const cache = useDataCache();
 
   // Formatting helpers
@@ -82,6 +89,23 @@ export default function BudgetPage() {
   const totalSpent = budgets.reduce((sum, b) => sum + calculateCategorySpent(b.category), 0);
   const overallProgress = totalBudget === 0 ? 0 : Math.min((totalSpent / totalBudget) * 100, 100);
 
+  const budgetAlerts = budgets.filter(b => {
+    if (dismissedWarnings.includes(b._id)) return false;
+    const spent = calculateCategorySpent(b.category);
+    return spent > 0 && (spent / b.amount) >= 0.8;
+  }).map(b => ({
+    ...b,
+    spent: calculateCategorySpent(b.category),
+    percentage: (calculateCategorySpent(b.category) / b.amount) * 100,
+    isOver: calculateCategorySpent(b.category) >= b.amount
+  }));
+
+  const dismissWarning = (id) => {
+    const next = [...dismissedWarnings, id];
+    setDismissedWarnings(next);
+    localStorage.setItem('budget_dismissed_warnings', JSON.stringify(next));
+  };
+
   return (
     <div className="page-container">
       {/* Header */}
@@ -117,9 +141,7 @@ export default function BudgetPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center flex-1 min-h-[40vh]">
-          <div className="w-8 h-8 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
-        </div>
+        <BudgetSkeleton />
       ) : (
         <motion.div 
           className="flex flex-col gap-4"
@@ -148,6 +170,46 @@ export default function BudgetPage() {
                 transition={{ duration: 1, ease: "easeOut" }}
               />
             </div>
+          </div>
+
+          {/* Budget Warning Alerts */}
+          <div className="space-y-2">
+            <AnimatePresence>
+              {budgetAlerts.map(alert => (
+                <motion.div
+                  key={alert._id}
+                  initial={{ opacity: 0, height: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, height: 'auto', scale: 1 }}
+                  exit={{ opacity: 0, height: 0, scale: 0.95 }}
+                  className={`flex items-start gap-3 p-4 rounded-2xl border ${
+                    alert.isOver
+                      ? 'bg-rose-50 border-rose-200'
+                      : 'bg-amber-50 border-amber-200'
+                  }`}
+                >
+                  <AlertTriangle size={18} className={`mt-0.5 shrink-0 ${alert.isOver ? 'text-rose-500' : 'text-amber-500'}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-bold ${alert.isOver ? 'text-rose-700' : 'text-amber-700'}`}>
+                      Anggaran {alert.category}
+                    </p>
+                    <p className={`text-xs mt-0.5 ${alert.isOver ? 'text-rose-600' : 'text-amber-600'}`}>
+                      {alert.isOver
+                        ? `Over Rp ${Math.abs(alert.amount - alert.spent).toLocaleString()}!`
+                        : `Telah terpakai ${alert.percentage.toFixed(0)}% (Rp ${alert.spent.toLocaleString()} dari Rp ${alert.amount.toLocaleString()})`
+                      }
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => dismissWarning(alert._id)}
+                    className={`p-1.5 rounded-lg transition-colors shrink-0 ${
+                      alert.isOver ? 'hover:bg-rose-100 text-rose-400' : 'hover:bg-amber-100 text-amber-400'
+                    }`}
+                  >
+                    <X size={16} />
+                  </button>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
 
           {/* Budget List */}

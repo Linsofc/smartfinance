@@ -1,5 +1,7 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import rateLimit from 'express-rate-limit';
 import User from '../models/User.js';
 import auth from '../middleware/auth.js';
 import Transaction from '../models/Transaction.js';
@@ -15,11 +17,23 @@ import { fileURLToPath } from 'url';
 import { sendTelegramNotification } from '../utils/telegram.js';
 import { getCache, setCache, invalidateCache } from '../utils/cache.js';
 
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skip: (req) => {
+    const owners = process.env.AKUN_PREM?.split(',').map(e => e.trim().toLowerCase()) || [];
+    return owners.includes(req.body?.email?.toLowerCase());
+  },
+  message: { message: 'Terlalu banyak permintaan. Silakan coba lagi dalam 15 menit.' }
+});
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const router = express.Router();
+
+router.use(authLimiter);
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -180,16 +194,72 @@ const sendForgotPasswordEmail = async (email, otp) => {
   }
 
   // Fallback to console logging in development
-  console.log('\n========================================');
-  console.log(`📬 [OTP RESET PASSWORD]`);
-  console.log(`Tujuan: ${email}`);
-  console.log(`Kode OTP: ${otp}`);
-  console.log('========================================\n');
+  // console.log('\n========================================');
+  // console.log(`📬 [OTP RESET PASSWORD]`);
+  // console.log(`Tujuan: ${email}`);
+  // console.log(`Kode OTP: ${otp}`);
+  // console.log('========================================\n');
   return false;
 };
 
+
+// Send Google Sign-up Password Email helper
+const sendGooglePasswordEmail = async (email, name, password) => {
+  const isSmtpConfigured = process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS;
+
+  if (isSmtpConfigured) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT || "587"),
+        secure: process.env.SMTP_SECURE === "true",
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+
+      const htmlParts = [
+        '<div style="font-family: Inter, sans-serif; background-color: #f8fafc; padding: 40px 20px;">',
+        '<div style="max-width: 500px; margin: 0 auto; background-color: #fff; border-radius: 12px; border: 1px solid #e2e8f0;">',
+        '<div style="text-align: center; padding: 32px 24px 24px; border-bottom: 1px solid #f1f5f9;">',
+        '<h2 style="color: #0f172a; margin: 0; font-size: 20px;">Selamat Datang di SmartFinance!</h2></div>',
+        '<div style="padding: 32px 24px;">',
+        '<p style="font-size: 15px; color: #334155;">Halo <strong>' + name + '</strong>,</p>',
+        '<p style="font-size: 15px; color: #334155;">Akun SmartFinance Anda telah berhasil dibuat melalui <strong>Google Login</strong>.</p>',
+        '<p style="font-size: 15px; color: #334155;">Berikut password akun Anda. Simpan jika ingin login pakai email dan password:</p>',
+        '<div style="text-align: center; margin: 32px 0; padding: 16px 32px; background-color: #eff6ff; border-radius: 8px; border: 1px dashed #93c5fd;">',
+        '<span style="font-size: 20px; font-weight: 700; color: #1d4ed8; font-family: monospace;">' + password + '</span></div>',
+        '<div style="background-color: #fff7ed; border-left: 4px solid #f97316; padding: 12px 16px; border-radius: 4px;">',
+        '<p style="font-size: 13px; color: #9a3412; margin: 0;"><strong>Saran:</strong> Segera ganti password di menu <strong>Pengaturan > Keamanan</strong>.</p></div>',
+        '<p style="font-size: 14px; color: #64748b;">Anda tetap bisa login pakai Google kapan saja.</p></div></div></div>',
+      ];
+
+      const mailOptions = {
+        from: "SmartFinance <saifulrijal@linsofc.my.id>",
+        to: email,
+        subject: "Selamat Datang di SmartFinance - Akun Google Anda",
+        html: htmlParts.join("\n"),
+        attachments: [{
+          filename: "logo.png",
+          path: __dirname + "/../../public/logo.png",
+          cid: "logo",
+        }],
+      };
+
+      await transporter.sendMail(mailOptions);
+      console.log("Email password Google berhasil dikirim ke " + email);
+      return true;
+    } catch (error) {
+      console.error("Gagal mengirim email password Google:", error);
+    }
+  }
+
+  console.log("\n[GOOGLE SIGN-UP PASSWORD] Tujuan: " + email + " Password: " + password + "\n");
+  return false;
+};
 // POST /api/auth/register (Initialize registration & Send OTP)
-router.post('/register', async (req, res) => {
+router.post('/register', authLimiter, async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
@@ -209,12 +279,13 @@ router.post('/register', async (req, res) => {
 
     // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const hashedOtp = await bcrypt.hash(otp, 10);
 
     // Remove any previous OTP for this email
     await Otp.deleteMany({ email });
 
     // Store registration data temporarily in OTP collection
-    const tempUser = new Otp({ name, email, password, otp });
+    const tempUser = new Otp({ name, email, password, otp: hashedOtp });
     await tempUser.save();
 
     // Send OTP
@@ -237,7 +308,7 @@ router.post('/register', async (req, res) => {
 });
 
 // POST /api/auth/register/verify (Verify OTP & Complete registration)
-router.post('/register/verify', async (req, res) => {
+router.post('/register/verify', authLimiter, async (req, res) => {
   try {
     const { email, otp } = req.body;
 
@@ -251,7 +322,15 @@ router.post('/register/verify', async (req, res) => {
       return res.status(400).json({ message: 'Kode OTP tidak ditemukan atau sudah kedaluwarsa.' });
     }
 
-    if (tempUser.otp !== otp) {
+    // Manual expiration check
+    const isExpired = (Date.now() - new Date(tempUser.createdAt).getTime()) > 60000;
+    if (isExpired) {
+      await Otp.deleteMany({ email });
+      return res.status(400).json({ message: 'Kode OTP sudah kedaluwarsa.' });
+    }
+
+    const isValidOtp = await bcrypt.compare(otp, tempUser.otp);
+    if (!isValidOtp) {
       return res.status(400).json({ message: 'Kode OTP salah.' });
     }
 
@@ -295,7 +374,7 @@ router.post('/register/verify', async (req, res) => {
 });
 
 // POST /api/auth/forgot-password (Send Password Reset OTP)
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', authLimiter, async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) {
@@ -309,12 +388,13 @@ router.post('/forgot-password', async (req, res) => {
 
     // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const hashedOtp = await bcrypt.hash(otp, 10);
 
     // Delete any existing password reset OTPs for this email
     await PasswordReset.deleteMany({ email });
 
     // Store the new OTP
-    const resetRecord = new PasswordReset({ email, otp });
+    const resetRecord = new PasswordReset({ email, otp: hashedOtp });
     await resetRecord.save();
 
     // Send OTP email
@@ -333,7 +413,7 @@ router.post('/forgot-password', async (req, res) => {
 });
 
 // POST /api/auth/reset-password/verify (Verify OTP)
-router.post('/reset-password/verify', async (req, res) => {
+router.post('/reset-password/verify', authLimiter, async (req, res) => {
   try {
     const { email, otp } = req.body;
     if (!email || !otp) {
@@ -345,7 +425,15 @@ router.post('/reset-password/verify', async (req, res) => {
       return res.status(400).json({ message: 'Kode OTP tidak ditemukan atau sudah kedaluwarsa.' });
     }
 
-    if (resetRecord.otp !== otp) {
+    // Manual expiration check
+    const isExpired = (Date.now() - new Date(resetRecord.createdAt).getTime()) > 60000;
+    if (isExpired) {
+      await PasswordReset.deleteMany({ email });
+      return res.status(400).json({ message: 'Kode OTP sudah kedaluwarsa.' });
+    }
+
+    const isValidOtp = await bcrypt.compare(otp, resetRecord.otp);
+    if (!isValidOtp) {
       return res.status(400).json({ message: 'Kode OTP salah.' });
     }
 
@@ -357,7 +445,7 @@ router.post('/reset-password/verify', async (req, res) => {
 });
 
 // POST /api/auth/reset-password (Execute Reset Password)
-router.post('/reset-password', async (req, res) => {
+router.post('/reset-password', authLimiter, async (req, res) => {
   try {
     const { email, otp, password } = req.body;
 
@@ -375,7 +463,15 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ message: 'Kode OTP tidak ditemukan atau sudah kedaluwarsa.' });
     }
 
-    if (resetRecord.otp !== otp) {
+    // Manual expiration check
+    const isExpired = (Date.now() - new Date(resetRecord.createdAt).getTime()) > 60000;
+    if (isExpired) {
+      await PasswordReset.deleteMany({ email });
+      return res.status(400).json({ message: 'Kode OTP sudah kedaluwarsa.' });
+    }
+
+    const isValidOtp = await bcrypt.compare(otp, resetRecord.otp);
+    if (!isValidOtp) {
       return res.status(400).json({ message: 'Kode OTP salah.' });
     }
 
@@ -403,7 +499,7 @@ router.post('/reset-password', async (req, res) => {
 });
 
 // POST /api/auth/login
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -538,7 +634,7 @@ router.put('/security', auth, async (req, res) => {
 });
 
 // POST /api/auth/google
-router.post('/google', async (req, res) => {
+router.post('/google', authLimiter, async (req, res) => {
   try {
     const { credential } = req.body;
     
@@ -691,3 +787,4 @@ router.post('/categories', auth, async (req, res) => {
 });
 
 export default router;
+

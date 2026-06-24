@@ -7,6 +7,34 @@ import Transfer from '../models/Transfer.js';
 
 const router = express.Router();
 
+// GET /api/data/export-csv — Export all transactions as CSV
+router.get('/export-csv', auth, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const transactions = await Transaction.find({ userId }).sort({ date: -1 }).lean();
+    const wallets = await Wallet.find({ userId }).lean();
+    const walletMap = {};
+    wallets.forEach(w => { walletMap[w._id.toString()] = w.name; });
+
+    const headers = 'Date,Type,Category,Amount,Note,Wallet\n';
+    const rows = transactions.map(t => {
+      const date = t.date ? new Date(t.date).toISOString().split('T')[0] : '';
+      const amount = t.amount || 0;
+      const note = (t.note || '').replace(/"/g, '""');
+      const walletName = t.walletId ? (walletMap[t.walletId.toString()] || '') : '';
+      return `${date},${t.type},${t.category},${amount},"${note}",${walletName}`;
+    }).join('\n');
+
+    const csv = '\uFEFF' + headers + rows;
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="smartfinance_transactions.csv"');
+    res.send(csv);
+  } catch (error) {
+    console.error('Error exporting CSV:', error);
+    res.status(500).json({ message: 'Gagal mengekspor CSV.' });
+  }
+});
+
 // GET /api/data/export — Export all user data as JSON
 router.get('/export', auth, async (req, res) => {
   try {

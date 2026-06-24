@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, Key, Cpu, Copy, Check, Trash2, Plus, 
-  MessageSquare, Eye, EyeOff, Sparkles, Terminal, BookOpen
+  MessageSquare, Eye, EyeOff, Sparkles, Terminal, BookOpen, Code
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
@@ -472,7 +472,7 @@ Bot:  → POST /budget body: {"categoryName":"Makanan","amount":1000000} ✅
             </motion.div>
           )}
         </AnimatePresence>
-
+          
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 gap-4">
             <div className="w-12 h-12 border-4 border-surface-2 border-t-accent-blue rounded-full animate-spin" />
@@ -680,6 +680,507 @@ Bot:  → POST /budget body: {"categoryName":"Makanan","amount":1000000} ✅
               </div>
             </motion.div>
 
+            {/* RESTful API Documentation */}
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35 }}
+              className="bg-surface-1 rounded-3xl border border-hairline-soft p-6 shadow-sm space-y-5"
+            >
+              <div className="flex items-center gap-3 pb-2 border-b border-hairline-soft">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+                  <Terminal size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-ink">Dokumentasi RESTful API</h3>
+                  <p className="text-xs text-ink-muted">Gunakan API Key di atas untuk mengakses endpoint berikut.</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {/* 1. GET /context */}
+                <EndpointCard
+                  method="GET" path="/context" color="emerald"
+                  desc="Mengambil konteks finansial lengkap: daftar dompet, kategori, anggaran aktif, 10 transaksi terbaru, dan ringkasan bulan ini."
+                  code={`import axios from 'axios';
+
+const API_KEY = 'sf_key_your_api_key_here';
+const BASE_URL = 'https://smartfinance.linsofc.my.id/api/v1/ai';
+
+async function getContext() {
+  const res = await axios.get(BASE_URL + '/context', {
+    headers: { 'X-API-KEY': API_KEY }
+  });
+  console.log(res.data);
+}`}
+                  response={`{
+  "wallets": [
+    { "_id": "...", "name": "Cash", "balance": 200000, "type": "Tunai" },
+    { "_id": "...", "name": "BCA", "balance": 5000000, "type": "E-Wallet" }
+  ],
+  "categories": [
+    { "name": "Makanan", "type": "EXPENSE", "icon": "🍛" },
+    { "name": "Gaji", "type": "INCOME", "icon": "💰" }
+  ],
+  "budgets": [
+    { "_id": "...", "category": "Makanan", "amount": 1000000, "icon": "🍛" }
+  ],
+  "recentTransactions": [
+    { "_id": "...", "date": "2026-06-21", "type": "EXPENSE", "category": "Makanan", "amount": 15000, "description": "Beli kopi", "walletName": "Cash" }
+  ],
+  "analytics": {
+    "thisMonth": {
+      "totalIncome": 25000000,
+      "totalExpense": 15000,
+      "balance": 24985000,
+      "expenseBreakdownByCategory": { "Makanan": 15000 }
+    }
+  }
+}`}
+                />
+
+                {/* 2. POST /transaction */}
+                <EndpointCard
+                  method="POST" path="/transaction" color="blue"
+                  desc="Mencatat transaksi pemasukan atau pengeluaran baru. Saldo dompet akan otomatis ter-update."
+                  body={`{
+  "type": "EXPENSE",
+  "amount": 25000,
+  "wallet_name": "Cash",
+  "category_name": "Makanan",
+  "description": "Nasi goreng malam",
+  "date": "2026-06-21"
+}`}
+                  code={`import axios from 'axios';
+
+const API_KEY = 'sf_key_your_api_key_here';
+const BASE_URL = 'https://smartfinance.linsofc.my.id/api/v1/ai';
+
+async function createTransaction() {
+  const res = await axios.post(BASE_URL + '/transaction', {
+    type: 'EXPENSE',
+    amount: 25000,
+    wallet_name: 'Cash',
+    category_name: 'Makanan',
+    description: 'Nasi goreng malam'
+  }, {
+    headers: { 'X-API-KEY': API_KEY }
+  });
+  console.log(res.data);
+}`}
+                  response={`{
+  "message": "Transaksi berhasil dicatat!",
+  "transaction": {
+    "_id": "...",
+    "type": "EXPENSE",
+    "category": "Makanan",
+    "amount": 25000,
+    "note": "Nasi goreng malam",
+    "walletId": "..."
+  },
+  "walletBalance": 175000
+}`}
+                />
+
+                {/* 3. POST /transfer */}
+                <EndpointCard
+                  method="POST" path="/transfer" color="blue"
+                  desc="Transfer uang antar dompet. Saldo kedua dompet akan otomatis ter-update."
+                  body={`{
+  "amount": 200000,
+  "sourceWalletName": "BCA",
+  "destinationWalletName": "Cash",
+  "description": "Tarik tunai"
+}`}
+                  code={`import axios from 'axios';
+
+const API_KEY = 'sf_key_your_api_key_here';
+const BASE_URL = 'https://smartfinance.linsofc.my.id/api/v1/ai';
+
+async function transfer() {
+  const res = await axios.post(BASE_URL + '/transfer', {
+    amount: 200000,
+    sourceWalletName: 'BCA',
+    destinationWalletName: 'Cash',
+    description: 'Tarik tunai'
+  }, {
+    headers: { 'X-API-KEY': API_KEY }
+  });
+  console.log(res.data);
+}`}
+                  response={`{
+  "message": "Transfer berhasil dilakukan!",
+  "transfer": {
+    "_id": "...",
+    "amount": 200000,
+    "note": "Tarik tunai"
+  },
+  "sourceWalletBalance": 4800000,
+  "destinationWalletBalance": 475000
+}`}
+                />
+
+                {/* 4. POST /wallet */}
+                <EndpointCard
+                  method="POST" path="/wallet" color="blue"
+                  desc="Membuat dompet baru untuk menyimpan uang."
+                  body={`{
+  "name": "Dana",
+  "type": "E-Wallet",
+  "balance": 0,
+  "icon": "smartphone",
+  "color": "#06b6d4"
+}`}
+                  code={`import axios from 'axios';
+
+const API_KEY = 'sf_key_your_api_key_here';
+const BASE_URL = 'https://smartfinance.linsofc.my.id/api/v1/ai';
+
+async function createWallet() {
+  const res = await axios.post(BASE_URL + '/wallet', {
+    name: 'Dana',
+    type: 'E-Wallet',
+    balance: 0
+  }, {
+    headers: { 'X-API-KEY': API_KEY }
+  });
+  console.log(res.data);
+}`}
+                  response={`{
+  "message": "Dompet berhasil ditambahkan!",
+  "wallet": {
+    "_id": "...",
+    "name": "Dana",
+    "balance": 0,
+    "type": "E-Wallet"
+  }
+}`}
+                />
+
+                {/* 5. PUT /wallet */}
+                <EndpointCard
+                  method="PUT" path="/wallet" color="orange"
+                  desc="Memperbarui nama, tipe, ikon, atau warna dompet yang sudah ada."
+                  body={`{
+  "id": "xxx_wallet_id_xxx",
+  "name": "Cash Baru",
+  "color": "#3b82f6"
+}`}
+                  code={`import axios from 'axios';
+
+const API_KEY = 'sf_key_your_api_key_here';
+const BASE_URL = 'https://smartfinance.linsofc.my.id/api/v1/ai';
+
+async function updateWallet() {
+  const res = await axios.put(BASE_URL + '/wallet', {
+    id: 'xxx_wallet_id_xxx',
+    name: 'Cash Baru',
+    color: '#3b82f6'
+  }, {
+    headers: { 'X-API-KEY': API_KEY }
+  });
+  console.log(res.data);
+}`}
+                  response={`{
+  "message": "Dompet berhasil diperbarui!",
+  "wallet": {
+    "_id": "xxx",
+    "name": "Cash Baru",
+    "color": "#3b82f6"
+  }
+}`}
+                />
+
+                {/* 6. DELETE /wallet */}
+                <EndpointCard
+                  method="DELETE" path="/wallet?id=xxx" color="red"
+                  desc="Menghapus dompet berdasarkan ID. Transaksi terkait tidak ikut terhapus."
+                  code={`import axios from 'axios';
+
+const API_KEY = 'sf_key_your_api_key_here';
+const BASE_URL = 'https://smartfinance.linsofc.my.id/api/v1/ai';
+
+async function deleteWallet() {
+  const res = await axios.delete(BASE_URL + '/wallet', {
+    params: { id: 'xxx_wallet_id_xxx' },
+    headers: { 'X-API-KEY': API_KEY }
+  });
+  console.log(res.data);
+}`}
+                  response={`{
+  "message": "Dompet berhasil dihapus!"
+}`}
+                />
+
+                {/* 7. POST /category */}
+                <EndpointCard
+                  method="POST" path="/category" color="blue"
+                  desc="Membuat kategori transaksi kustom baru."
+                  body={`{
+  "name": "Servis Motor",
+  "icon": "🔧",
+  "color": "#f59e0b",
+  "type": "EXPENSE"
+}`}
+                  code={`import axios from 'axios';
+
+const API_KEY = 'sf_key_your_api_key_here';
+const BASE_URL = 'https://smartfinance.linsofc.my.id/api/v1/ai';
+
+async function createCategory() {
+  const res = await axios.post(BASE_URL + '/category', {
+    name: 'Servis Motor',
+    icon: '🔧',
+    color: '#f59e0b',
+    type: 'EXPENSE'
+  }, {
+    headers: { 'X-API-KEY': API_KEY }
+  });
+  console.log(res.data);
+}`}
+                  response={`{
+  "message": "Kategori berhasil ditambahkan!",
+  "categories": [
+    { "name": "Servis Motor", "icon": "🔧", "color": "#f59e0b", "type": "EXPENSE" }
+  ]
+}`}
+                />
+
+                {/* 8. GET /categories */}
+                <EndpointCard
+                  method="GET" path="/categories" color="emerald"
+                  desc="Melihat semua kategori transaksi kustom yang telah dibuat pengguna."
+                  code={`import axios from 'axios';
+
+const API_KEY = 'sf_key_your_api_key_here';
+const BASE_URL = 'https://smartfinance.linsofc.my.id/api/v1/ai';
+
+async function getCategories() {
+  const res = await axios.get(BASE_URL + '/categories', {
+    headers: { 'X-API-KEY': API_KEY }
+  });
+  console.log(res.data);
+}`}
+                  response={`{
+  "categories": [
+    { "name": "Servis Motor", "icon": "🔧", "color": "#f59e0b", "type": "EXPENSE" }
+  ]
+}`}
+                />
+
+                {/* 9. GET /balance */}
+                <EndpointCard
+                  method="GET" path="/balance" color="emerald"
+                  desc="Melihat saldo semua dompet yang dimiliki."
+                  code={`import axios from 'axios';
+
+const API_KEY = 'sf_key_your_api_key_here';
+const BASE_URL = 'https://smartfinance.linsofc.my.id/api/v1/ai';
+
+async function getBalance() {
+  const res = await axios.get(BASE_URL + '/balance', {
+    headers: { 'X-API-KEY': API_KEY }
+  });
+  console.log(res.data);
+}`}
+                  response={`{
+  "wallets": [
+    { "name": "Cash", "balance": 475000, "type": "Tunai" },
+    { "name": "BCA", "balance": 4800000, "type": "E-Wallet" }
+  ]
+}`}
+                />
+
+                {/* 10. GET /transactions */}
+                <EndpointCard
+                  method="GET" path="/transactions" color="emerald"
+                  desc="Mengambil riwayat transaksi dengan filter opsional."
+                  code={`import axios from 'axios';
+
+const API_KEY = 'sf_key_your_api_key_here';
+const BASE_URL = 'https://smartfinance.linsofc.my.id/api/v1/ai';
+
+async function getTransactions() {
+  const res = await axios.get(BASE_URL + '/transactions', {
+    params: { limit: 5, type: 'EXPENSE', category: 'Makanan' },
+    headers: { 'X-API-KEY': API_KEY }
+  });
+  console.log(res.data);
+}`}
+                  response={`{
+  "transactions": [
+    {
+      "_id": "...",
+      "date": "2026-06-21T08:01:46.557Z",
+      "type": "EXPENSE",
+      "category": "Makanan",
+      "amount": 25000,
+      "description": "Nasi goreng",
+      "walletName": "Cash"
+    }
+  ]
+}`}
+                />
+
+                {/* 11. PUT /transaction */}
+                <EndpointCard
+                  method="PUT" path="/transaction" color="orange"
+                  desc="Memperbarui transaksi yang sudah ada. Jangan hapus dan buat ulang."
+                  body={`{
+  "id": "xxx_transaction_id_xxx",
+  "amount": 30000,
+  "description": "Nasi goreng + telur"
+}`}
+                  code={`import axios from 'axios';
+
+const API_KEY = 'sf_key_your_api_key_here';
+const BASE_URL = 'https://smartfinance.linsofc.my.id/api/v1/ai';
+
+async function updateTransaction() {
+  const res = await axios.put(BASE_URL + '/transaction', {
+    id: 'xxx_transaction_id_xxx',
+    amount: 30000,
+    description: 'Nasi goreng + telur'
+  }, {
+    headers: { 'X-API-KEY': API_KEY }
+  });
+  console.log(res.data);
+}`}
+                  response={`{
+  "message": "Transaksi berhasil diperbarui!",
+  "transaction": {
+    "_id": "xxx",
+    "amount": 30000,
+    "type": "EXPENSE",
+    "category": "Makanan",
+    "description": "Nasi goreng + telur"
+  }
+}`}
+                />
+
+                {/* 12. DELETE /transaction */}
+                <EndpointCard
+                  method="DELETE" path="/transaction?id=xxx" color="red"
+                  desc="Menghapus transaksi. Dua-step: panggil tanpa confirm untuk preview, lalu dengan &confirm=true untuk eksekusi."
+                  code={`import axios from 'axios';
+
+const API_KEY = 'sf_key_your_api_key_here';
+const BASE_URL = 'https://smartfinance.linsofc.my.id/api/v1/ai';
+
+// Step 1: Preview
+async function previewDelete() {
+  const res = await axios.delete(BASE_URL + '/transaction', {
+    params: { id: 'xxx_transaction_id_xxx' },
+    headers: { 'X-API-KEY': API_KEY }
+  });
+  console.log('Preview:', res.data);
+}
+
+// Step 2: Confirm
+async function confirmDelete() {
+  const res = await axios.delete(BASE_URL + '/transaction', {
+    params: { id: 'xxx_transaction_id_xxx', confirm: true },
+    headers: { 'X-API-KEY': API_KEY }
+  });
+  console.log('Deleted:', res.data);
+}`}
+                  response={`// Preview response:
+{
+  "preview": true,
+  "warning": "Transaksi akan dihapus. Saldo Cash akan dikembalikan +Rp 25.000",
+  "transaction": { "_id": "xxx", "amount": 25000, "category": "Makanan", "walletName": "Cash" }
+}
+
+// Confirm response:
+{
+  "message": "Transaksi berhasil dihapus!"
+}`}
+                />
+
+                {/* 13. GET /budgets */}
+                <EndpointCard
+                  method="GET" path="/budgets" color="emerald"
+                  desc="Mendapatkan daftar anggaran belanja yang aktif."
+                  code={`import axios from 'axios';
+
+const API_KEY = 'sf_key_your_api_key_here';
+const BASE_URL = 'https://smartfinance.linsofc.my.id/api/v1/ai';
+
+async function getBudgets() {
+  const res = await axios.get(BASE_URL + '/budgets', {
+    headers: { 'X-API-KEY': API_KEY }
+  });
+  console.log(res.data);
+}`}
+                  response={`{
+  "budgets": [
+    {
+      "_id": "...",
+      "category": "Makanan",
+      "amount": 1000000,
+      "icon": "🍔"
+    }
+  ]
+}`}
+                />
+
+                {/* 14. POST /budget */}
+                <EndpointCard
+                  method="POST" path="/budget" color="blue"
+                  desc="Membuat atau memperbarui anggaran belanja per kategori (upsert)."
+                  body={`{
+  "categoryName": "Makanan",
+  "amount": 1000000,
+  "icon": "🍔"
+}`}
+                  code={`import axios from 'axios';
+
+const API_KEY = 'sf_key_your_api_key_here';
+const BASE_URL = 'https://smartfinance.linsofc.my.id/api/v1/ai';
+
+async function createBudget() {
+  const res = await axios.post(BASE_URL + '/budget', {
+    categoryName: 'Makanan',
+    amount: 1000000,
+    icon: '🍔'
+  }, {
+    headers: { 'X-API-KEY': API_KEY }
+  });
+  console.log(res.data);
+}`}
+                  response={`{
+  "message": "Anggaran berhasil disimpan!",
+  "budget": {
+    "_id": "...",
+    "category": "Makanan",
+    "amount": 1000000
+  }
+}`}
+                />
+
+                {/* 15. DELETE /budget */}
+                <EndpointCard
+                  method="DELETE" path="/budget" color="red"
+                  desc="Menghapus anggaran belanja berdasarkan nama kategori atau ID."
+                  code={`import axios from 'axios';
+
+const API_KEY = 'sf_key_your_api_key_here';
+const BASE_URL = 'https://smartfinance.linsofc.my.id/api/v1/ai';
+
+async function deleteBudget() {
+  const res = await axios.delete(BASE_URL + '/budget', {
+    params: { categoryName: 'Makanan' },
+    headers: { 'X-API-KEY': API_KEY }
+  });
+  console.log(res.data);
+}`}
+                  response={`{
+  "message": "Anggaran berhasil dihapus!"
+}`}
+                />
+              </div>
+            </motion.div>
+
             {/* Cara Kerja / Panduan UI Chat */}
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
@@ -761,6 +1262,51 @@ Bot:  → POST /budget body: {"categoryName":"Makanan","amount":1000000} ✅
 
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function EndpointCard({ method, path, color, desc, body, code, response }) {
+  const colorMap = {
+    GET: { bg: 'bg-emerald-500/10', text: 'text-emerald-600', border: 'border-emerald-500/20' },
+    POST: { bg: 'bg-blue-500/10', text: 'text-blue-600', border: 'border-blue-500/20' },
+    PUT: { bg: 'bg-orange-500/10', text: 'text-orange-600', border: 'border-orange-500/20' },
+    DELETE: { bg: 'bg-red-500/10', text: 'text-red-600', border: 'border-red-500/20' }
+  };
+  const mc = colorMap[method] || colorMap.GET;
+  return (
+    <div className="border border-hairline-soft rounded-2xl overflow-hidden bg-surface-2/30 hover:bg-surface-2/50 transition-colors">
+      <div className="p-4 space-y-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className={'text-[11px] font-bold px-2.5 py-1 rounded-lg border ' + mc.bg + ' ' + mc.text + ' ' + mc.border}>
+            {method}
+          </span>
+          <code className="text-sm font-semibold text-ink font-mono">{path}</code>
+          {desc && <p className="text-xs text-ink-muted w-full sm:w-auto sm:flex-1 sm:min-w-0 mt-1 sm:mt-0">{desc}</p>}
+        </div>
+        <div className="space-y-3">
+          {body && (
+            <div>
+              <p className="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                <Code size={12} /> Request Body
+              </p>
+              <pre className="p-3 bg-[#0d1117] text-[#c9d1d9] font-mono text-[11px] rounded-xl overflow-x-auto leading-relaxed border border-[#30363d] whitespace-pre-wrap">{body}</pre>
+            </div>
+          )}
+          <div>
+            <p className="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-1 flex items-center gap-1.5">
+              <Terminal size={12} /> Node.js (axios)
+            </p>
+            <pre className="p-3 bg-[#0d1117] text-[#c9d1d9] font-mono text-[11px] rounded-xl overflow-x-auto leading-relaxed border border-[#30363d] whitespace-pre-wrap">{code}</pre>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-ink-muted uppercase tracking-wider mb-1 flex items-center gap-1.5">
+              <Check size={12} /> Response
+            </p>
+            <pre className="p-3 bg-[#0d1117] text-[#c9d1d9] font-mono text-[11px] rounded-xl overflow-x-auto leading-relaxed border border-[#30363d] whitespace-pre-wrap">{response}</pre>
+          </div>
+        </div>
       </div>
     </div>
   );

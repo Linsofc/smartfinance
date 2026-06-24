@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+﻿import mongoose from 'mongoose';
 
 const transactionSchema = new mongoose.Schema({
   userId: {
@@ -27,7 +27,7 @@ const transactionSchema = new mongoose.Schema({
   amount: {
     type: Number,
     required: [true, 'Jumlah harus diisi'],
-    min: [0, 'Jumlah tidak boleh negatif']
+    min: [1, 'Jumlah minimal 1']
   },
   note: {
     type: String,
