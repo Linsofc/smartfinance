@@ -13,6 +13,7 @@ import {
 import { useDataCache } from '../context/DataCacheContext';
 import api from '../api/axios';
 import { WalletLogo } from '../components/WalletLogos';
+import { AnalyticsSkeleton } from '../components/Skeleton';
 
 const WALLET_ICONS = {
   wallet: WalletIcon,
@@ -407,14 +408,7 @@ export default function AnalyticsPage() {
   }, [barChartTimeData, filteredTransactions]);
 
   if (loading) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-surface-2 min-h-screen">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-ink-muted border-t-accent-blue rounded-full animate-spin" />
-          <p className="text-ink-muted text-xs font-semibold">Memuat analisis...</p>
-        </div>
-      </div>
-    );
+    return <AnalyticsSkeleton />;
   }
 
   return (

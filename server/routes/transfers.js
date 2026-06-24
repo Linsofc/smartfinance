@@ -19,8 +19,8 @@ router.get('/', async (req, res) => {
     }
 
     const transfers = await Transfer.find({ userId: req.userId })
-      .populate('fromWalletId', 'name color icon type')
-      .populate('toWalletId', 'name color icon type')
+      .populate('fromWalletId', 'name color icon type logo')
+      .populate('toWalletId', 'name color icon type logo')
       .sort({ date: -1, createdAt: -1 });
 
     setCache(cacheKey, transfers);

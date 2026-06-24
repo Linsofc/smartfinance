@@ -12,6 +12,7 @@ import {
   ArrowLeftRight, 
   Receipt,
   ArrowRight,
+  ArrowDown,
   Calendar,
   AlertCircle,
   ImageIcon
@@ -725,7 +726,7 @@ export default function WalletPage() {
               </div>
 
               {/* Header */}
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-2">
                 <h2 className="text-lg font-bold tracking-tight text-ink">Transfer Antar Dompet</h2>
                 <motion.button whileTap={{ scale: 0.85 }} onClick={() => setShowTransferModal(false)}
                   className="w-9 h-9 rounded-full bg-surface-2 flex items-center justify-center text-ink hover:bg-hairline transition-colors">
@@ -741,82 +742,175 @@ export default function WalletPage() {
                   </div>
                 )}
 
+                {/* Dari Dompet */}
                 <div>
-                  <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider block mb-2">Dari Dompet</label>
-                  <select
-                    value={transferData.fromWalletId}
-                    onChange={(e) => setTransferData({ ...transferData, fromWalletId: e.target.value })}
-                    required
-                    className="w-full bg-surface-2 rounded-xl py-3 px-4 text-sm border border-hairline focus:border-accent-blue/50 transition-colors text-ink"
-                    style={{ colorScheme: 'light' }}
-                  >
-                    <option value="">Pilih Dompet Asal</option>
-                    {wallets.map(w => (
-                      <option key={w._id} value={w._id}>
-                        {w.name} (Saldo: {formatRupiah(w.balance)})
-                      </option>
-                    ))}
-                  </select>
+                  <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider block mb-2.5">Dari Dompet</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {wallets.map(w => {
+                      const IconComp = WALLET_ICONS[w.icon] || WalletIcon;
+                      const isSelected = transferData.fromWalletId === w._id;
+                      return (
+                        <motion.button
+                          key={w._id}
+                          type="button"
+                          whileTap={{ scale: 0.97 }}
+                          onClick={() => {
+                            setTransferData({ ...transferData, fromWalletId: w._id, toWalletId: transferData.toWalletId === w._id ? '' : transferData.toWalletId });
+                          }}
+                          className={`relative flex items-center gap-2.5 p-3 rounded-2xl border transition-all text-left ${
+                            isSelected
+                              ? 'bg-danger/5 border-danger/30 ring-2 ring-danger/20'
+                              : 'bg-surface-2 border-hairline hover:border-hairline-soft'
+                          }`}
+                        >
+                          <WalletLogo logo={w.logo} icon={w.icon} color={w.color} size={36} IconComp={IconComp} />
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-semibold truncate ${isSelected ? 'text-danger' : 'text-ink'}`}>{w.name}</p>
+                            <p className={`text-[10px] mt-0.5 tabular-nums ${isSelected ? 'text-danger/70' : 'text-ink-muted'}`}>
+                              Rp {w.balance.toLocaleString()}
+                            </p>
+                          </div>
+                          {isSelected && (
+                            <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-danger flex items-center justify-center">
+                              <span className="text-white text-[8px] font-bold">✓</span>
+                            </div>
+                          )}
+                        </motion.button>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                <div>
-                  <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider block mb-2">Ke Dompet</label>
-                  <select
-                    value={transferData.toWalletId}
-                    onChange={(e) => setTransferData({ ...transferData, toWalletId: e.target.value })}
-                    required
-                    className="w-full bg-surface-2 rounded-xl py-3 px-4 text-sm border border-hairline focus:border-accent-blue/50 transition-colors text-ink"
-                    style={{ colorScheme: 'light' }}
+                {/* Arrow connector */}
+                <div className="flex items-center justify-center -my-2">
+                  <motion.div
+                    animate={{ rotate: transferData.fromWalletId && transferData.toWalletId ? 0 : 0 }}
+                    className="w-8 h-8 rounded-full bg-surface-2 border border-hairline flex items-center justify-center text-ink-muted"
                   >
-                    <option value="">Pilih Dompet Tujuan</option>
+                    <ArrowDown size={16} />
+                  </motion.div>
+                </div>
+
+                {/* Ke Dompet */}
+                <div>
+                  <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider block mb-2.5">Ke Dompet</label>
+                  <div className="grid grid-cols-2 gap-2">
                     {wallets
                       .filter(w => w._id !== transferData.fromWalletId)
-                      .map(w => (
-                        <option key={w._id} value={w._id}>
-                          {w.name} (Saldo: {formatRupiah(w.balance)})
-                        </option>
-                      ))}
-                  </select>
+                      .map(w => {
+                        const IconComp = WALLET_ICONS[w.icon] || WalletIcon;
+                        const isSelected = transferData.toWalletId === w._id;
+                        return (
+                          <motion.button
+                            key={w._id}
+                            type="button"
+                            whileTap={{ scale: 0.97 }}
+                            onClick={() => setTransferData({ ...transferData, toWalletId: w._id })}
+                            className={`relative flex items-center gap-2.5 p-3 rounded-2xl border transition-all text-left ${
+                              isSelected
+                                ? 'bg-primary/5 border-primary/30 ring-2 ring-primary/20'
+                                : 'bg-surface-2 border-hairline hover:border-hairline-soft'
+                            }`}
+                          >
+                            <WalletLogo logo={w.logo} icon={w.icon} color={w.color} size={36} IconComp={IconComp} />
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-xs font-semibold truncate ${isSelected ? 'text-primary' : 'text-ink'}`}>{w.name}</p>
+                              <p className={`text-[10px] mt-0.5 tabular-nums ${isSelected ? 'text-primary/70' : 'text-ink-muted'}`}>
+                                Rp {w.balance.toLocaleString()}
+                              </p>
+                            </div>
+                            {isSelected && (
+                              <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                                <span className="text-white text-[8px] font-bold">✓</span>
+                              </div>
+                            )}
+                          </motion.button>
+                        );
+                      })}
+                  </div>
                 </div>
 
+                {/* Amount */}
                 <div>
-                  <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider block mb-2">Jumlah Transfer (Rp)</label>
-                  <input
-                    type="number"
-                    value={transferData.amount}
-                    onChange={(e) => setTransferData({ ...transferData, amount: e.target.value })}
-                    placeholder="0"
-                    required
-                    min="1"
-                    className="w-full bg-surface-2 rounded-xl py-3 px-4 text-sm border border-hairline focus:border-accent-blue/50 transition-colors text-ink tabular-nums"
-                  />
+                  <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider block mb-2">Jumlah Transfer</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-muted font-bold text-sm">Rp</span>
+                    <input
+                      type="number"
+                      value={transferData.amount}
+                      onChange={(e) => setTransferData({ ...transferData, amount: e.target.value })}
+                      placeholder="0"
+                      required
+                      min="1"
+                      className="w-full bg-surface-2 rounded-2xl py-4 pl-10 pr-4 text-lg font-bold border border-hairline focus:border-accent-blue/50 transition-colors text-ink tabular-nums text-right"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider block mb-2">Tanggal</label>
-                  <input
-                    type="date"
-                    value={transferData.date}
-                    onChange={(e) => setTransferData({ ...transferData, date: e.target.value })}
-                    required
-                    className="w-full bg-surface-2 rounded-xl py-3 px-4 text-sm border border-hairline focus:border-accent-blue/50 transition-colors text-ink"
-                  />
+                {/* Balance Preview */}
+                {transferData.fromWalletId && transferData.toWalletId && Number(transferData.amount) > 0 && (() => {
+                  const src = wallets.find(w => w._id === transferData.fromWalletId);
+                  const dst = wallets.find(w => w._id === transferData.toWalletId);
+                  const amount = Number(transferData.amount);
+                  if (!src || !dst) return null;
+                  return (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-surface-2 border border-hairline rounded-2xl p-3 space-y-1.5"
+                    >
+                      <p className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">Pratinjau Saldo</p>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-ink-muted">{src.name}</span>
+                        <span className="text-ink font-semibold tabular-nums">
+                          Rp {(src.balance - amount).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-ink-muted">{dst.name}</span>
+                        <span className="text-ink font-semibold tabular-nums">
+                          Rp {(dst.balance + amount).toLocaleString()}
+                        </span>
+                      </div>
+                    </motion.div>
+                  );
+                })()}
+
+                {/* Date & Note */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider block mb-2">Tanggal</label>
+                    <div className="relative">
+                      <Calendar size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none" />
+                      <input
+                        type="date"
+                        value={transferData.date}
+                        onChange={(e) => setTransferData({ ...transferData, date: e.target.value })}
+                        required
+                        className="w-full bg-surface-2 rounded-xl py-3 pl-9 pr-3 text-sm border border-hairline focus:border-accent-blue/50 transition-colors text-ink"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider block mb-2">Catatan</label>
+                    <input
+                      type="text"
+                      value={transferData.note}
+                      onChange={(e) => setTransferData({ ...transferData, note: e.target.value })}
+                      placeholder="Opsional"
+                      className="w-full bg-surface-2 rounded-xl py-3 px-3 text-sm border border-hairline focus:border-accent-blue/50 transition-colors text-ink"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="text-[11px] font-bold text-ink-muted uppercase tracking-wider block mb-2">Catatan</label>
-                  <input
-                    type="text"
-                    value={transferData.note}
-                    onChange={(e) => setTransferData({ ...transferData, note: e.target.value })}
-                    placeholder="Contoh: Kirim uang jajan, bayar utang"
-                    className="w-full bg-surface-2 rounded-xl py-3 px-4 text-sm border border-hairline focus:border-accent-blue/50 transition-colors text-ink"
-                  />
-                </div>
-
-                <motion.button type="submit" disabled={transferring} whileTap={{ scale: 0.97 }}
-                  className="w-full py-3.5 rounded-full text-sm font-bold bg-primary text-on-primary hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity">
-                  {transferring ? 'Memproses Transfer...' : 'Kirim Transfer'}
+                <motion.button type="submit" disabled={transferring || !transferData.fromWalletId || !transferData.toWalletId || !transferData.amount} whileTap={{ scale: 0.97 }}
+                  className="w-full py-3.5 rounded-full text-sm font-bold bg-primary text-on-primary hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity">
+                  {transferring ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Memproses...
+                    </span>
+                  ) : 'Kirim Transfer'}
                 </motion.button>
               </form>
             </motion.div>
@@ -835,7 +929,7 @@ export default function WalletPage() {
               initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
               exit={{ y: 80, opacity: 0 }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              style={{ height: '75dvh' }}
+              style={{ height: '80dvh' }}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Handle */}
@@ -844,10 +938,10 @@ export default function WalletPage() {
               </div>
 
               {/* Header */}
-              <div className="flex items-center justify-between mb-4 shrink-0">
+              <div className="flex items-center justify-between mb-5 shrink-0">
                 <div>
                   <h2 className="text-lg font-bold tracking-tight text-ink">Riwayat Transfer</h2>
-                  <p className="text-xs text-ink-muted">Daftar transfer antar dompet</p>
+                  <p className="text-xs text-ink-muted">Transfer antar dompet</p>
                 </div>
                 <motion.button whileTap={{ scale: 0.85 }} onClick={() => setShowHistoryModal(false)}
                   className="w-9 h-9 rounded-full bg-surface-2 flex items-center justify-center text-ink hover:bg-hairline transition-colors">
@@ -856,72 +950,102 @@ export default function WalletPage() {
               </div>
 
               {/* List Container */}
-              <div className="flex-1 overflow-y-auto no-scrollbar space-y-3 pt-2">
+              <div className="flex-1 overflow-y-auto no-scrollbar space-y-2.5 pt-1">
                 {historyLoading ? (
-                  <div className="flex flex-col items-center justify-center py-12 gap-2">
-                    <div className="w-6 h-6 border-2 border-ink-muted border-t-accent-blue rounded-full animate-spin" />
-                    <span className="text-xs text-ink-muted">Memuat riwayat...</span>
+                  <div className="space-y-2.5">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: i * 0.05 }}
+                        className="bg-surface-2/40 border border-hairline-soft rounded-2xl p-4 space-y-3"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full bg-surface-2 animate-pulse" />
+                            <div className="w-5 h-5 rounded-full bg-surface-2 animate-pulse flex items-center justify-center">
+                              <div className="w-3 h-0.5 bg-surface-2/50 rounded" />
+                            </div>
+                            <div className="w-7 h-7 rounded-full bg-surface-2 animate-pulse" />
+                          </div>
+                          <div className="w-16 h-4 bg-surface-2 animate-pulse rounded" />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="w-24 h-3 bg-surface-2 animate-pulse rounded" />
+                          <div className="w-20 h-3 bg-surface-2 animate-pulse rounded" />
+                        </div>
+                      </motion.div>
+                    ))}
                   </div>
                 ) : transfers.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <div className="w-12 h-12 rounded-full bg-surface-2 flex items-center justify-center text-ink-muted text-lg mb-2">
-                      💸
+                    <div className="w-14 h-14 rounded-2xl bg-surface-2 flex items-center justify-center text-ink-muted text-2xl mb-3">
+                      ⇄
                     </div>
-                    <p className="text-xs text-ink-muted font-medium">Belum ada riwayat transfer</p>
-                    <p className="text-[10px] text-ink-muted/50 mt-0.5">Semua transaksi transfer antar dompet akan muncul di sini</p>
+                    <p className="text-sm text-ink-muted font-medium">Belum ada riwayat transfer</p>
+                    <p className="text-xs text-ink-muted/50 mt-1 max-w-56">
+                      Transfer antar dompet akan tercatat di sini
+                    </p>
                   </div>
                 ) : (
                   transfers.map((item) => {
                     const fromWalletName = item.fromWalletId?.name || 'Dompet Terhapus';
                     const toWalletName = item.toWalletId?.name || 'Dompet Terhapus';
-                    const fromColor = item.fromWalletId?.color || '#999999';
-                    const toColor = item.toWalletId?.color || '#999999';
+                    const fromColor = item.fromWalletId?.color || '#999';
+                    const toColor = item.toWalletId?.color || '#999';
+                    const fromIcon = item.fromWalletId?.icon || 'wallet';
+                    const toIcon = item.toWalletId?.icon || 'wallet';
+                    const fromLogo = item.fromWalletId?.logo || '';
+                    const toLogo = item.toWalletId?.logo || '';
+                    const FromIconComp = WALLET_ICONS[fromIcon] || WalletIcon;
+                    const ToIconComp = WALLET_ICONS[toIcon] || WalletIcon;
                     
                     return (
                       <motion.div
                         key={item._id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="bg-surface-2/40 border border-hairline-soft rounded-2xl p-4 flex flex-col gap-2.5"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-surface-1 border border-hairline-soft rounded-2xl p-4 space-y-3"
                       >
-                        {/* Top: Transfer flow */}
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span 
-                              className="text-xs font-semibold px-2 py-0.5 rounded-md truncate max-w-[90px]"
-                              style={{ backgroundColor: `${fromColor}15`, color: fromColor }}
-                            >
-                              {fromWalletName}
-                            </span>
-                            <ArrowRight size={12} className="text-ink-muted shrink-0" />
-                            <span 
-                              className="text-xs font-semibold px-2 py-0.5 rounded-md truncate max-w-[90px]"
-                              style={{ backgroundColor: `${toColor}15`, color: toColor }}
-                            >
-                              {toWalletName}
-                            </span>
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <WalletLogo logo={fromLogo} icon={fromIcon} color={fromColor} size={32} IconComp={FromIconComp} />
+                            <ArrowRight size={14} className="text-ink-muted/40 shrink-0" />
+                            <WalletLogo logo={toLogo} icon={toIcon} color={toColor} size={32} IconComp={ToIconComp} />
                           </div>
-                          
-                          <span className="text-xs font-bold text-accent-blue tabular-nums">
+                          <span className="text-sm font-bold text-accent-blue tabular-nums">
                             {formatRupiah(item.amount)}
                           </span>
                         </div>
 
-                        {/* Bottom: Date & Note */}
-                        <div className="flex items-center justify-between text-[10px] text-ink-muted">
-                          <div className="flex items-center gap-1">
-                            <Calendar size={10} />
-                            <span>{new Date(item.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 text-xs text-ink-muted">
+                            <span className="font-medium text-ink truncate max-w-[80px]">{fromWalletName}</span>
+                            <span className="text-ink-muted/40">→</span>
+                            <span className="font-medium text-ink truncate max-w-[80px]">{toWalletName}</span>
                           </div>
-                          {item.note && (
-                            <span className="italic truncate max-w-[150px]" title={item.note}>
-                              "{item.note}"
+                          <div className="flex items-center gap-2 text-[10px] text-ink-muted">
+                            <Calendar size={10} className="shrink-0" />
+                            <span className="tabular-nums">
+                              {new Date(item.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                             </span>
-                          )}
+                          </div>
                         </div>
+
+                        {item.note && (
+                          <div className="text-[11px] text-ink-muted/60 bg-surface-2 rounded-lg px-3 py-1.5 leading-relaxed">
+                            {item.note}
+                          </div>
+                        )}
                       </motion.div>
                     );
                   })
+                )}
+                {!historyLoading && transfers.length > 0 && (
+                  <div className="text-center py-4 text-[10px] text-ink-muted/40 font-medium">
+                    — {transfers.length} transaksi —
+                  </div>
                 )}
               </div>
             </motion.div>

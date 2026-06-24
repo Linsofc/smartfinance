@@ -74,19 +74,48 @@ function DashboardSkeleton() {
 
 function WalletSkeleton() {
   return (
-    <div className="grid grid-cols-2 gap-3">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <motion.div
-          key={i}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.06 }}
-          className="bg-surface-1 rounded-[20px] border border-hairline-soft p-4"
-        >
-          <SkeletonRect className="w-full aspect-square rounded-2xl mb-3" />
-          <SkeletonRect className="h-4 w-3/4 mb-2" />
-          <SkeletonRect className="h-3 w-1/2" />
-        </motion.div>
+    <div className="flex flex-col gap-6">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="bg-gradient-to-br from-brand-blue-dark to-brand-blue-light rounded-[24px] p-6"
+      >
+        <SkeletonRect className="h-3 w-20 bg-white/20 mb-3" />
+        <SkeletonRect className="h-8 w-44 bg-white/20 mb-2" />
+        <SkeletonRect className="h-3 w-24 bg-white/20" />
+      </motion.div>
+
+      {['Tunai', 'E-Wallet'].map((cat, ci) => (
+        <div key={cat} className="space-y-2.5">
+          <div className="flex items-center justify-between px-1">
+            <SkeletonRect className="h-3 w-16" />
+            <SkeletonRect className="h-3 w-20" />
+          </div>
+          <div className="space-y-2">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + (ci * 2 + i) * 0.06 }}
+                className="bg-surface-1 rounded-[20px] p-4 border border-hairline-soft flex items-center gap-4"
+              >
+                <SkeletonCircle size={44} />
+                <div className="flex-1 min-w-0 space-y-2">
+                  <SkeletonRect className="h-4 w-28" />
+                  <SkeletonRect className="h-3 w-16" />
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <SkeletonRect className="h-4 w-20" />
+                  <div className="flex gap-1.5">
+                    <SkeletonRect className="h-7 w-7 rounded-lg" />
+                    <SkeletonRect className="h-7 w-7 rounded-lg" />
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
       ))}
     </div>
   );
@@ -143,6 +172,43 @@ function BudgetSkeleton() {
   );
 }
 
+function AnalyticsSkeleton() {
+  return (
+    <div className="flex-1 flex flex-col bg-surface-2 min-h-screen px-4 py-6 space-y-5">
+      <div className="space-y-1">
+        <SkeletonRect className="h-7 w-48" />
+        <SkeletonRect className="h-3 w-64 mt-2" />
+      </div>
+
+      <div className="flex gap-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <SkeletonRect key={i} className="h-8 flex-1 rounded-xl" />
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.06 }}
+            className="bg-surface-1 rounded-[20px] border border-hairline-soft p-4"
+          >
+            <SkeletonCircle size={36} />
+            <SkeletonRect className="h-3 w-16 mt-3" />
+            <SkeletonRect className="h-6 w-28 mt-2" />
+            <SkeletonRect className="h-3 w-20 mt-1" />
+          </motion.div>
+        ))}
+      </div>
+
+      <SkeletonCard />
+      <SkeletonCard />
+    </div>
+  );
+}
+
 export {
   SkeletonRect,
   SkeletonCircle,
@@ -151,4 +217,5 @@ export {
   DashboardSkeleton,
   WalletSkeleton,
   BudgetSkeleton,
+  AnalyticsSkeleton,
 };
