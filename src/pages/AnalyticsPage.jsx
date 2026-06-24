@@ -95,13 +95,13 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
 
   // Filter States
-  const [period, setPeriod] = useState('30days');
+  const [period, setPeriod] = useState('thisMonth');
   const [startDate, setStartDate] = useState(() => {
-    const { start } = getPeriodDates('30days');
+    const { start } = getPeriodDates('thisMonth');
     return formatDateForInput(start);
   });
   const [endDate, setEndDate] = useState(() => {
-    const { end } = getPeriodDates('30days');
+    const { end } = getPeriodDates('thisMonth');
     return formatDateForInput(end);
   });
   
